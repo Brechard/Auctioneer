@@ -22,12 +22,25 @@ class Auction:
 
         return bid
 
-    def
+
     def choose_winner(self, bids, market_price):
 
+        valid_bids = []
+        for bid in bids.value():
+
+            if bid > market_price :
+                continue
+
+            if bid <= market_price :
+                valid_bids.append(bid)
 
 
-        return (winner, price_payed)
+        valid_bids = sorted(valid_bids, reverse=True)
+
+        winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]]
+        price_to_pay = valid_bids[1]
+
+        return (winner_id, price_to_pay)
 
 
 
