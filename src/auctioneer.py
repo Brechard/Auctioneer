@@ -23,6 +23,20 @@ class Auction:
         return bid
 
 
+    def update_profit(self, profit, winner_id):
+
+        self.buyers_profits[winner_id] = profit
+
+
+    # def update_alpha(self, winner_id, type, seller_id):
+
+
+
+
+
+
+
+
     def choose_winner(self, bids, market_price):
 
         valid_bids = []
@@ -39,6 +53,10 @@ class Auction:
 
         winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]]
         price_to_pay = valid_bids[1]
+        profit = market_price - price_to_pay
+
+        self.update_profit(profit, winner_id)
+
 
         return (winner_id, price_to_pay)
 
