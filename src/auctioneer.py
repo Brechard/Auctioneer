@@ -14,8 +14,9 @@ class Auctioneer:
         self.max_starting_price = 100
         self.penalty_factor = 0.1
 
-        self.level_flag = level_comm_flag
-        self.buyers_flag = self.initialize_buyers_flag()
+        # If level commitment is activated sellers cannot cancel a won auction
+        self.level_commitment_activated = level_comm_flag
+        self.buyers_already_won = self.initialize_buyers_flag()
         self.buyers_history = {}
         if level_comm_flag:
             self.buyers_history = self.initialize_buyers_history()
@@ -37,14 +38,14 @@ class Auctioneer:
     def start_auction(self):
         # TODO fill market price, buyers and sellers profit matrix
         for auction_round in range(self.r_rounds):
-            self.buyers_flag = self.initialize_buyers_flag()
-            if self.level_flag:
+            self.buyers_already_won = self.initialize_buyers_flag()
+            if self.level_commitment_activated:
                 self.buyers_history = self.initialize_buyers_history()
 
             for seller in range(self.k_sellers):
                 buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.calculate_auction_parameters(seller)
                 for buyer in range(self.n_buyers):
-                    if self.buyers_flag[buyer] and not self.level_flag:
+                    if self.buyers_already_won[buyer] and not self.level_commitment_activated:
                         continue
                     n_buyer_auction += 1
                     bid = self.calculate_bid(buyer, item, seller, starting_price)
@@ -54,10 +55,11 @@ class Auctioneer:
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
 
-                self.buyers_flag[winner] = True
+                self.buyers_already_won[winner] = True
 
-                if self.level_flag:
-                    self.store_buyer_history(buyer=winner, profit=(market_price - price_to_pay), price_paid=price_to_pay)
+                if self.level_commitment_activated:
+                    self.store_buyer_history(buyer=winner, profit=(market_price - price_to_pay),
+                                             price_paid=price_to_pay)
 
                 self.update_alphas(winner, seller, item)
                 self.market_price[auction_round, seller] = market_price
@@ -78,8 +80,8 @@ class Auctioneer:
 
     def calculate_bid(self, buyer_id, item_type, seller_id, starting_price):
         bid = self.bidding_factor[buyer_id, item_type, seller_id] * starting_price
-        if not self.level_flag \
-                or not self.buyers_flag[buyer_id]:
+        if not self.level_commitment_activated \
+                or not self.buyers_already_won[buyer_id]:
             # If the buyer flag is not ON it means the buyer hasn't win an auction in this round yet
             return bid
 
@@ -140,7 +142,6 @@ class Auctioneer:
         print(self.buyers_profits)
         print("The sellers profits are:")
         print(self.sellers_profits)
-        pass
 
 
 if __name__ == '__main__':
