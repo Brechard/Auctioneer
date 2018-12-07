@@ -49,11 +49,11 @@ class Auctioneer:
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
 
                 if not self.level_flag:
-                    self.buyers_flag[buyer] = True
+                    self.buyers_flag[winner] = True
 
                 self.update_alphas(winner, seller, item)
                 self.market_price[auction_round, seller] = market_price
-                self.buyers_profits[auction_round, buyer] += market_price - price_to_pay
+                self.buyers_profits[auction_round, winner] += market_price - price_to_pay
                 self.sellers_profits[auction_round, seller] += price_to_pay
                 # self.history[auction_round] = {seller, [winner, price]}
 
@@ -85,7 +85,7 @@ class Auctioneer:
 
         valid_bids = sorted(valid_bids, reverse=True)
 
-        winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]]
+        winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]][0]
         price_to_pay = valid_bids[1]
 
         return winner_id, price_to_pay
