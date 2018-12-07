@@ -15,7 +15,10 @@ class Auctioneer:
         self.penalty_factor = 0.1
 
         self.level_flag = level_comm_flag
-        self.buyers_flag = [False for buyer in range(self.n_buyers)]
+        self.buyers_flag = self.initialize_buyers_flag()
+        self.buyers_history = {}
+        if level_comm_flag:
+            self.buyers_history = self.initialize_buyers_history()
         self.sellers_types = [random.sample(self.m_item_types, 1)[0] for seller in range(self.k_sellers)]
 
         self.bidding_factor = np.random.uniform(1, 2, size=(self.n_buyers, len(self.m_item_types), self.k_sellers))
@@ -34,7 +37,10 @@ class Auctioneer:
     def start_auction(self):
         # TODO fill market price, buyers and sellers profit matrix
         for auction_round in range(self.r_rounds):
-            self.buyers_flag = [False for buyer in range(self.n_buyers)]
+            self.buyers_flag = self.initialize_buyers_flag()
+            if self.level_flag:
+                self.buyers_history = self.initialize_buyers_history()
+
             for seller in range(self.k_sellers):
                 buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.calculate_auction_parameters(seller)
                 for buyer in range(self.n_buyers):
@@ -48,8 +54,10 @@ class Auctioneer:
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
 
-                if not self.level_flag:
-                    self.buyers_flag[winner] = True
+                self.buyers_flag[winner] = True
+
+                if self.level_flag:
+                    self.store_buyer_history(buyer=winner, profit=(market_price - price_to_pay), price_paid=price_to_pay)
 
                 self.update_alphas(winner, seller, item)
                 self.market_price[auction_round, seller] = market_price
@@ -69,7 +77,14 @@ class Auctioneer:
         return random.random() * self.max_starting_price
 
     def calculate_bid(self, buyer_id, item_type, seller_id, starting_price):
-        return self.bidding_factor[buyer_id, item_type, seller_id] * starting_price
+        bid = self.bidding_factor[buyer_id, item_type, seller_id] * starting_price
+        if not self.level_flag \
+                or not self.buyers_flag[buyer_id]:
+            # If the buyer flag is not ON it means the buyer hasn't win an auction in this round yet
+            return bid
+
+        previous_profit, penalty = self.get_information_buyers_history(buyer_id)
+        return max(bid, starting_price + previous_profit + penalty)
 
     # def update_alpha(self, winner_id, type, seller_id):
 
@@ -97,43 +112,25 @@ class Auctioneer:
             else:
                 self.bidding_factor[buyer, item, seller] *= self.increase_bidding_factor[buyer]
 
-    """
-    Initialize:
-    Number of Items, Sellers, Buyers
-    """
+    def initialize_buyers_flag(self):
+        return [False for buyer in range(self.n_buyers)]
 
-    def initialize_variables(self):
-        # TODO Implement initialize_variables
-        pass
+    def initialize_buyers_history(self):
+        """
+        The history of the buyers saves the information needed to calculate the bid when level commitment is allowed.
+        This informations is:
+            - profit made, stored in position 0
+            - penalty to pay, stored in position 1
+        """
+        return [[] for buyer in range(self.n_buyers)]
 
-    """
-    Initialize alpha values for each buyer and seller and item
-    """
+    def get_information_buyers_history(self, buyer):
+        profit_made = self.buyers_history[buyer][0]
+        penalty = self.buyers_history[buyer][1]
+        return profit_made, penalty
 
-    def initialize_alpha_values(self):
-        # TODO Implement initialize_alpha_values
-        pass
-
-    """
-    Initialize delta values
-    """
-
-    def initialize_delta_values(self):
-        # TODO Implement initialize_delta_values
-        pass
-
-    """
-    Perform simulation
-    """
-
-    def run_simulation(self):
-        # Perform initializations
-        self.initialize_variables()
-        self.initialize_alpha_values()
-        self.initialize_delta_values()
-
-        # TODO Implement rest of the simulation
-        pass
+    def store_buyer_history(self, buyer, profit, price_paid):
+        self.buyers_history[buyer] = [profit, self.penalty_factor * price_paid]
 
     def print_outcome(self):
         # TODO Implement print_outcome
@@ -147,6 +144,6 @@ class Auctioneer:
 
 
 if __name__ == '__main__':
-    auctioneer = Auctioneer()
+    auctioneer = Auctioneer(level_comm_flag=True)
     # auctioneer.run_simulation()
     auctioneer.print_outcome()
