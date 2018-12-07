@@ -34,6 +34,7 @@ class Auctioneer:
     def start_auction(self):
         # TODO fill market price, buyers and sellers profit matrix
         for auction_round in range(self.r_rounds):
+            self.buyers_flag = [False for buyer in range(self.n_buyers)]
             for seller in range(self.k_sellers):
                 buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.calculate_auction_parameters(seller)
                 for buyer in range(self.n_buyers):
@@ -46,6 +47,10 @@ class Auctioneer:
 
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
+
+                if not self.level_flag:
+                    self.buyers_flag[buyer] = True
+
                 self.update_alphas(winner, seller, item)
                 self.market_price[auction_round, seller] = market_price
                 self.buyers_profits[auction_round, buyer] += market_price - price_to_pay
@@ -82,6 +87,7 @@ class Auctioneer:
 
         winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]]
         price_to_pay = valid_bids[1]
+
         return winner_id, price_to_pay
 
     def update_alphas(self, winner, seller, item):
