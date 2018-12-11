@@ -34,10 +34,11 @@ class AuctioneerTest(unittest.TestCase):
 
     def test_real_case_scenario(self):
         starting_prices = [
-            [40, 50, 20],
-            [20, 15, 25]
+            [40, 50, 20]
         ]
-        auctioneer = Auctioneer([], starting_prices, 2, 3, 5, 2, False)
+
+        auctioneer = Auctioneer(starting_prices=starting_prices, M_types=2, K_sellers=3, N_buyers=5, R_rounds=2,
+                                level_comm_flag=False)
         auctioneer.increase_bidding_factor = [2, 3, 4, 5, 6]
         auctioneer.decrease_bidding_factor = [0.6, 0.5, 0.4, 0.3, 0.2]
         auctioneer.sellers_types = [1, 1, 0]
