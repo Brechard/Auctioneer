@@ -225,7 +225,7 @@ class Auctioneer:
             print()
             print("Seller", seller, "sells item", self.sellers_types[seller])
             print("Market price", round(auction.market_price, 4))
-            print("Winner profit:", round(auction.winner_profit, 4))
+            print("Winner is", auction.winner, "with a profit of", round(auction.winner_profit, 4))
             print("Seller profit:", round(auction.seller_profit, 4))
             if auction.item_returned:
                 print("The item was returned")
