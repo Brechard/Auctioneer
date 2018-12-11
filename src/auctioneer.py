@@ -1,11 +1,12 @@
 import numpy as np
 import random
+from prettytable import PrettyTable
 
 
 class Auctioneer:
 
-    def __init__(self, bidding_factor_strategy=[], starting_prices=[], M_types=3, K_sellers=4,
-                 N_buyers=10, R_rounds=3, level_comm_flag=False):
+    def __init__(self, bidding_factor_strategy = [], starting_prices = [], M_types = 3, K_sellers = 4,
+                 N_buyers = 10, R_rounds = 3, level_comm_flag = False):
         """
         :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
         :param starting_prices: Debug purposes, starting prices can be forced this way.
@@ -40,8 +41,8 @@ class Auctioneer:
         self.bidding_factor_strategy = bidding_factor_strategy
         self.bidding_factor = self.calculate_bidding_factor()
 
-        self.increase_bidding_factor = np.random.uniform(1, 2, size=self.n_buyers)
-        self.decrease_bidding_factor = np.random.uniform(0, 1, size=self.n_buyers)
+        self.increase_bidding_factor = np.random.uniform(1, 2, size = self.n_buyers)
+        self.decrease_bidding_factor = np.random.uniform(0, 1, size = self.n_buyers)
 
         self.market_price = np.zeros((self.r_rounds, self.k_sellers))
         self.buyers_profits = np.zeros((self.r_rounds, self.n_buyers))
@@ -98,17 +99,23 @@ class Auctioneer:
     def calculate_fee(self, price_paid):
         return self.penalty_factor * price_paid
 
-    def choose_item_to_keep(self, auction, market_price, price_to_pay, winner):
+    def choose_item_to_keep(self, auction, market_price, price_to_pay, winner, seller):
         previous_auction, previous_seller = self.get_auction_with_winner(winner)
         previous_winner_profit = previous_auction.winner_profit
         previous_fee = self.calculate_fee(previous_auction.price_paid)
         new_profit = market_price - price_to_pay
         new_fee = self.calculate_fee(price_to_pay)
-        if new_profit - new_fee > previous_winner_profit - previous_fee:
+        if new_profit - previous_fee > previous_winner_profit - new_fee:
             # It is profitable to keep the new item, pay fee to previous seller
-            self.auctions_history[previous_seller].return_item(previous_fee)
+            previous_auction.return_item(previous_fee,
+                                         new_item_profit=new_profit,
+                                         new_item_fee=new_fee,
+                                         seller_item_kept=seller)
         else:
-            auction.return_item(new_fee)
+            auction.return_item(new_fee,
+                                new_item_profit=previous_winner_profit,
+                                         new_item_fee=previous_fee,
+                                         seller_item_kept=previous_seller)
 
     def choose_winner(self, bids, market_price):
         # TODO dealing with two people with the same bid as winning bid
@@ -120,7 +127,7 @@ class Auctioneer:
 
             valid_bids.append(bid)
 
-        valid_bids = sorted(valid_bids, reverse=True)
+        valid_bids = sorted(valid_bids, reverse = True)
 
         winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]][0]
         try:
@@ -204,13 +211,14 @@ class Auctioneer:
         print("Round", round_number, "history")
         seller = 0
         for auction in self.auctions_history:
-            print()
-            print("Seller", seller, "sells item", self.sellers_types[seller])
-            print("Market price", round(auction.market_price, 4))
-            print("Winner is", auction.winner, "with a profit of", round(auction.winner_profit, 4))
-            print("Seller profit:", round(auction.seller_profit, 4))
-            if auction.item_returned:
-                print("The item was returned")
+            auction.print_auction(seller)
+            # print()
+            # print("Seller", seller, "sells item", self.sellers_types[seller])
+            # print("Market price", round(auction.market_price, 4))
+            # print("Winner is", auction.winner, "with a profit of", round(auction.winner_profit, 4))
+            # print("Seller profit:", round(auction.seller_profit, 4))
+            # if auction.item_returned:
+            #     print("The item was returned")
             seller += 1
         print()
         print("------------------------------------------------------")
@@ -234,33 +242,34 @@ class Auctioneer:
 
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
-                auction = self.store_auction_history(winner=winner,
-                                                     price_paid=price_to_pay,
-                                                     market_price=market_price,
-                                                     bid_history=buyers_bid,
-                                                     previous_alphas=self.get_alphas(seller, item))
+                auction = self.store_auction_history(winner = winner,
+                                                     price_paid = price_to_pay,
+                                                     starting_price = starting_price,
+                                                     market_price = market_price,
+                                                     bid_history = buyers_bid,
+                                                     previous_alphas = self.get_alphas(seller, item))
 
                 if self.level_commitment_activated and self.buyers_already_won[winner]:
                     # The buyer already won an auction in this round so he has to choose which one to return
-                    self.choose_item_to_keep(auction, market_price, price_to_pay, winner)
+                    self.choose_item_to_keep(auction, market_price, price_to_pay, winner, seller)
 
                 self.buyers_already_won[winner] = True
                 new_alphas = self.update_alphas(winner, seller, item)
                 auction.set_new_alphas(new_alphas)
                 self.market_price[auction_round, seller] = market_price
-
             self.update_profits(auction_round)
             self.print_round(auction_round)
 
-    def store_auction_history(self, market_price, winner, price_paid, bid_history, previous_alphas):
-        auction = Auction(market_price, price_paid, winner, bid_history, previous_alphas)
+    def store_auction_history(self, starting_price, market_price, winner, price_paid, bid_history, previous_alphas):
+        auction = Auction(starting_price, market_price, price_paid, winner, bid_history, previous_alphas)
         self.auctions_history.append(auction)
         return auction
 
 
 class Auction:
 
-    def __init__(self, market_price, price_paid, winner, bid_history, previous_alphas):
+    def __init__(self, starting_price, market_price, price_paid, winner, bid_history, previous_alphas):
+        self.starting_price = starting_price
         self.market_price = market_price
         self.price_paid = price_paid
         self.winner = winner
@@ -269,20 +278,71 @@ class Auction:
         self.item_returned = False
 
         # Debug purposes
-        self.bid_history = bid_history
-        self.previous_alphas = previous_alphas
+        self.bid_history = ['%.2f' % elem for elem in bid_history.values()]
+        self.previous_alphas = ['%.2f' % elem for elem in previous_alphas]
         self.new_alphas = []
+        self.new_item_profit = None
+        self.new_item_fee = None
+        self.seller_item_kept = None
 
-    def return_item(self, fee):
+    def return_item(self, fee, new_item_profit, new_item_fee, seller_item_kept):
         self.seller_profit = fee
         self.winner_profit = - fee
         self.item_returned = True
+        self.new_item_profit = new_item_profit
+        self.new_item_fee = new_item_fee
+        self.seller_item_kept = seller_item_kept
 
     def set_new_alphas(self, new_alphas):
-        self.new_alphas = new_alphas
+        self.new_alphas = ['%.2f' % elem for elem in new_alphas]
+
+    def print_auction(self, n):
+        # Printing buyer info
+        buyer_info = PrettyTable()
+        field_names = ["Auction #" + str(n)]
+        for buyer in range(len(self.bid_history)):
+            heading = "B" + str(buyer)
+            if buyer == self.winner:
+                heading = heading + " - W"
+            field_names.append(heading)
+        # field_names.extend(["Market Price", "Winner", "Price to pay"])
+        buyer_info.field_names = field_names
+        buyer_info.add_row(["Old Alpha"] + self.previous_alphas)
+        buyer_info.add_row(["Bids"] + self.bid_history)
+        buyer_info.add_row(["New Alpha"] + self.new_alphas)
+
+        print(buyer_info)
+
+        # Printing market prices info
+        auction_info = PrettyTable()
+
+        field_names = ["Starting price", "Market Price", "Winner", "Price to pay", "Buyer profit", "Seller profit"]
+        auction_info.field_names = field_names
+        row = [self.starting_price, self.market_price, self.winner, self.price_paid, self.winner_profit,
+               self.seller_profit]
+        row = ['%.2f' % elem for elem in row]
+        row[2] = self.winner
+        auction_info.add_row(row)
+        print(auction_info)
+        print()
+        print()
+
+        # Printing return info
+        if self.item_returned:
+            return_info = PrettyTable()
+            field_names = ["Buyer previous profit", "Buyer previous fee", "Buyer new profit",
+                           "Buyer new fee", "Seller of the new item", "Total profit"]
+            return_info.field_names = field_names
+            row = [self.winner_profit, ]
+
+    def round_dict_values(self, dict):
+        for dict_value in dict:
+            for k, v in dict_value.items():
+                dict_value[k] = round(v, 2)
+        return dict
 
 
 if __name__ == '__main__':
-    auctioneer = Auctioneer(level_comm_flag=True)
+    auctioneer = Auctioneer(level_comm_flag = True)
     auctioneer.start_auction()
     auctioneer.print_outcome()
