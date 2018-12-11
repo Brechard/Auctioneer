@@ -4,24 +4,25 @@ import random
 
 class Auctioneer:
 
-    def __init__(self, bidding_factor_strategy=[], starting_prices=[], M=3, K=4, N=10, R=3, level_comm_flag=False):
+    def __init__(self, bidding_factor_strategy=[], starting_prices=[], M_types=3, K_sellers=4,
+                 N_buyers=10, R_rounds=3, level_comm_flag=False):
         """
         :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
-        :param starting_prices:
-        :param M:
-        :param K:
-        :param N:
-        :param R:
-        :param level_comm_flag:
+        :param starting_prices: Debug purposes, starting prices can be forced this way.
+        :param M_types: Number of types of items
+        :param K_sellers: Number of sellers
+        :param N_buyers: Number of buyers
+        :param R_rounds: Number of rounds
+        :param level_comm_flag: Flag to say if level commitment is allowed or not
         """
         if len(bidding_factor_strategy) == 0:
             # If the strategy is not passed, it is set to default 0
-            bidding_factor_strategy = [0 for n in range(N)]
+            bidding_factor_strategy = [0 for n in range(N_buyers)]
 
-        self.m_item_types = range(M)
-        self.k_sellers = K
-        self.n_buyers = N
-        self.r_rounds = R
+        self.m_item_types = range(M_types)
+        self.k_sellers = K_sellers
+        self.n_buyers = N_buyers
+        self.r_rounds = R_rounds
 
         self.max_starting_price = 100
         self.penalty_factor = 0.1
@@ -29,9 +30,11 @@ class Auctioneer:
         # If level commitment is activated sellers cannot cancel a won auction
         self.level_commitment_activated = level_comm_flag
         self.buyers_already_won = self.initialize_buyers_flag()
-        self.buyers_history = {}
+        self.auctions_history = {}
         if level_comm_flag:
-            self.buyers_history = self.initialize_buyers_history()
+            self.auctions_history = self.initialize_auction_history()
+
+        # Assign a type of item to each seller randomly
         self.sellers_types = [random.sample(self.m_item_types, 1)[0] for seller in range(self.k_sellers)]
 
         self.bidding_factor_strategy = bidding_factor_strategy
@@ -68,11 +71,10 @@ class Auctioneer:
         return bidding_factor
 
     def start_auction(self):
-        # TODO fill market price, buyers and sellers profit matrix
         for auction_round in range(self.r_rounds):
             self.buyers_already_won = self.initialize_buyers_flag()
             if self.level_commitment_activated:
-                self.buyers_history = self.initialize_buyers_history()
+                self.auctions_history = self.initialize_auction_history()
 
             for seller in range(self.k_sellers):
                 buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.initialize_auction_parameters(
@@ -87,18 +89,37 @@ class Auctioneer:
 
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
-
-                self.buyers_already_won[winner] = True
+                auction = self.store_auction_history(winner=winner,
+                                                     price_paid=price_to_pay,
+                                                     market_price=market_price)
 
                 if self.level_commitment_activated:
-                    self.store_buyer_history(buyer=winner, profit=(market_price - price_to_pay),
-                                             price_paid=price_to_pay)
+                    if self.buyers_already_won[winner]:  # The buyer already won an auction in this round
+                        previous_auction, previous_seller = self.get_auction_with_winner(winner)
+                        previous_winner_profit = previous_auction.winner_profit
+                        previous_fee = self.calculate_fee(previous_auction.price_paid)
 
+                        new_profit = market_price - price_to_pay
+                        new_fee = self.calculate_fee(price_to_pay)
+                        if new_profit - new_fee > previous_winner_profit - previous_fee:
+                            # It is profitable to keep the new item, pay fee to previous seller
+                            self.auctions_history[previous_seller].return_item(previous_fee)
+                        else:
+                            auction.return_item(new_fee)
+
+                self.buyers_already_won[winner] = True
                 self.update_alphas(winner, seller, item)
                 self.market_price[auction_round, seller] = market_price
-                self.buyers_profits[auction_round, winner] += market_price - price_to_pay
-                self.sellers_profits[auction_round, seller] += price_to_pay
-                # self.history[auction_round] = {seller, [winner, price]}
+
+            self.update_profits(auction_round)
+            self.print_round(auction_round)
+
+    def update_profits(self, auction_round):
+        seller = 0
+        for auction in self.auctions_history:
+            self.buyers_profits[auction_round, auction.winner] += auction.winner_profit
+            self.sellers_profits[auction_round, seller] += auction.seller_profit
+            seller += 1
 
     def initialize_auction_parameters(self, auction_round, seller):
         try:
@@ -124,11 +145,11 @@ class Auctioneer:
                 or not self.buyers_already_won[buyer_id]:
             # If the buyer flag is not ON it means the buyer hasn't win an auction in this round yet
             return bid
+        auction, seller = self.get_auction_with_winner(buyer_id)
+        previous_profit, market_price = auction.winner_profit, auction.market_price
+        penalty = self.calculate_fee(market_price - previous_profit)
 
-        previous_profit, penalty = self.get_information_buyers_history(buyer_id)
         return max(bid, starting_price + previous_profit + penalty)
-
-    # def update_alpha(self, winner_id, type, seller_id):
 
     def choose_winner(self, bids, market_price):
         # TODO dealing with two people with the same bid as winning bid
@@ -165,22 +186,27 @@ class Auctioneer:
     def initialize_buyers_flag(self):
         return [False for buyer in range(self.n_buyers)]
 
-    def initialize_buyers_history(self):
+    def initialize_auction_history(self):
         """
-        The history of the buyers saves the information needed to calculate the bid when level commitment is allowed.
-        This information is:
-            - profit made, stored in position 0
-            - penalty to pay, stored in position 1
+        List with the history of auctions, it will be filled with auctions objects
         """
-        return [[] for buyer in range(self.n_buyers)]
+        return []
 
-    def get_information_buyers_history(self, buyer):
-        profit_made = self.buyers_history[buyer][0]
-        penalty = self.buyers_history[buyer][1]
-        return profit_made, penalty
+    def get_auction_with_winner(self, winner):
+        seller = 0
+        for auction in self.auctions_history:
+            if winner == auction.winner:
+                return auction, seller
+            seller += 1
+        assert 0 == 1
 
-    def store_buyer_history(self, buyer, profit, price_paid):
-        self.buyers_history[buyer] = [profit, self.penalty_factor * price_paid]
+    def store_auction_history(self, market_price, winner, price_paid):
+        auction = Auction(market_price, price_paid, winner)
+        self.auctions_history.append(auction)
+        return auction
+
+    def calculate_fee(self, price_paid):
+        return self.penalty_factor * price_paid
 
     def print_outcome(self):
         # TODO Implement print_outcome
@@ -191,8 +217,40 @@ class Auctioneer:
         print("The sellers profits are:")
         print(self.sellers_profits)
 
+    def print_round(self, round_number):
+        print()
+        print("Round", round_number, "history")
+        seller = 0
+        for auction in self.auctions_history:
+            print()
+            print("Seller", seller, "sells item", self.sellers_types[seller])
+            print("Market price", round(auction.market_price, 4))
+            print("Winner profit:", round(auction.winner_profit, 4))
+            print("Seller profit:", round(auction.seller_profit, 4))
+            if auction.item_returned:
+                print("The item was returned")
+            seller += 1
+        print()
+        print("------------------------------------------------------")
+
+
+class Auction:
+
+    def __init__(self, market_price, price_paid, winner):
+        self.market_price = market_price
+        self.price_paid = price_paid
+        self.winner = winner
+        self.seller_profit = market_price
+        self.winner_profit = self.market_price - self.price_paid
+        self.item_returned = False
+
+    def return_item(self, fee):
+        self.seller_profit = fee
+        self.winner_profit = - fee
+        self.item_returned = True
+
 
 if __name__ == '__main__':
-    auctioneer = Auctioneer(level_comm_flag=False)
+    auctioneer = Auctioneer(level_comm_flag=True)
     auctioneer.start_auction()
     auctioneer.print_outcome()
