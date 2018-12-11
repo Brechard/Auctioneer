@@ -130,6 +130,17 @@ class Auctioneer:
 
         return winner_id, price_to_pay
 
+    def get_alphas(self, seller, item):
+        alphas = []
+        for buyer in range(self.n_buyers):
+            if self.bidding_factor_strategy[buyer] == 1:
+                second_dimension = item
+            else:
+                second_dimension = seller
+
+            alphas.append(self.bidding_factor[buyer][second_dimension])
+        return alphas
+
     def get_auction_with_winner(self, winner):
         seller = 0
         for auction in self.auctions_history:
@@ -156,6 +167,7 @@ class Auctioneer:
         return [False for buyer in range(self.n_buyers)]
 
     def update_alphas(self, winner, seller, item):
+        new_alphas = []
         for buyer in range(self.n_buyers):
             if self.bidding_factor_strategy[buyer] == 1:
                 second_dimension = item
@@ -166,6 +178,10 @@ class Auctioneer:
                 self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
             else:
                 self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
+
+            new_alphas.append(self.bidding_factor[buyer][second_dimension])
+
+        return new_alphas
 
     def update_profits(self, auction_round):
         seller = 0
@@ -220,39 +236,50 @@ class Auctioneer:
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
                 auction = self.store_auction_history(winner=winner,
                                                      price_paid=price_to_pay,
-                                                     market_price=market_price)
+                                                     market_price=market_price,
+                                                     bid_history=buyers_bid,
+                                                     previous_alphas=self.get_alphas(seller, item))
 
                 if self.level_commitment_activated and self.buyers_already_won[winner]:
                     # The buyer already won an auction in this round so he has to choose which one to return
                     self.choose_item_to_keep(auction, market_price, price_to_pay, winner)
 
                 self.buyers_already_won[winner] = True
-                self.update_alphas(winner, seller, item)
+                new_alphas = self.update_alphas(winner, seller, item)
+                auction.set_new_alphas(new_alphas)
                 self.market_price[auction_round, seller] = market_price
 
             self.update_profits(auction_round)
             self.print_round(auction_round)
 
-    def store_auction_history(self, market_price, winner, price_paid):
-        auction = Auction(market_price, price_paid, winner)
+    def store_auction_history(self, market_price, winner, price_paid, bid_history, previous_alphas):
+        auction = Auction(market_price, price_paid, winner, bid_history, previous_alphas)
         self.auctions_history.append(auction)
         return auction
 
 
 class Auction:
 
-    def __init__(self, market_price, price_paid, winner):
+    def __init__(self, market_price, price_paid, winner, bid_history, previous_alphas):
         self.market_price = market_price
         self.price_paid = price_paid
         self.winner = winner
-        self.seller_profit = market_price
+        self.seller_profit = price_paid
         self.winner_profit = self.market_price - self.price_paid
         self.item_returned = False
+
+        # Debug purposes
+        self.bid_history = bid_history
+        self.previous_alphas = previous_alphas
+        self.new_alphas = []
 
     def return_item(self, fee):
         self.seller_profit = fee
         self.winner_profit = - fee
         self.item_returned = True
+
+    def set_new_alphas(self, new_alphas):
+        self.new_alphas = new_alphas
 
 
 if __name__ == '__main__':
