@@ -1,6 +1,7 @@
 from auctioneer import Auctioneer
 import unittest
 import numpy as np
+import random
 
 
 class AuctioneerTest(unittest.TestCase):

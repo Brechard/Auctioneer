@@ -4,7 +4,7 @@ import random
 
 class Auctioneer:
 
-    def __init__(self, starting_prices, M=3, K=4, N=10, R=3, level_comm_flag=False):
+    def __init__(self, starting_prices=[], M=3, K=4, N=10, R=3, level_comm_flag=False):
 
         self.m_item_types = range(M)
         self.k_sellers = K
