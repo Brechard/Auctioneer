@@ -4,7 +4,19 @@ import random
 
 class Auctioneer:
 
-    def __init__(self, starting_prices=[], M=3, K=4, N=10, R=3, level_comm_flag=False):
+    def __init__(self, bidding_factor_strategy=[], starting_prices=[], M=3, K=4, N=10, R=3, level_comm_flag=False):
+        """
+        :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
+        :param starting_prices:
+        :param M:
+        :param K:
+        :param N:
+        :param R:
+        :param level_comm_flag:
+        """
+        if len(bidding_factor_strategy) == 0:
+            # If the strategy is not passed, it is set to default 0
+            bidding_factor_strategy = [0 for n in range(N)]
 
         self.m_item_types = range(M)
         self.k_sellers = K
@@ -22,7 +34,8 @@ class Auctioneer:
             self.buyers_history = self.initialize_buyers_history()
         self.sellers_types = [random.sample(self.m_item_types, 1)[0] for seller in range(self.k_sellers)]
 
-        self.bidding_factor = np.random.uniform(1, 2, size=(self.n_buyers, len(self.m_item_types), self.k_sellers))
+        self.bidding_factor_strategy = bidding_factor_strategy
+        self.bidding_factor = self.calculate_bidding_factor()
 
         self.increase_bidding_factor = np.random.uniform(1, 2, size=self.n_buyers)
         self.decrease_bidding_factor = np.random.uniform(0, 1, size=self.n_buyers)
@@ -35,6 +48,25 @@ class Auctioneer:
 
         self.starting_prices = starting_prices
 
+    def calculate_bidding_factor(self):
+        """
+        Bidding factor strategies:
+            0 - Depends only on the seller
+            1 - Depends only on the kind of item
+        :return:
+        """
+        bidding_factor = []
+        for buyer in range(self.n_buyers):
+            if self.bidding_factor_strategy[buyer] == 1:
+                bidding_factor.append(
+                    np.random.uniform(1, 2, self.m_item_types)
+                )
+            else:
+                bidding_factor.append(
+                    np.random.uniform(1, 2, self.k_sellers)
+                )
+        return bidding_factor
+
     def start_auction(self):
         # TODO fill market price, buyers and sellers profit matrix
         for auction_round in range(self.r_rounds):
@@ -43,7 +75,8 @@ class Auctioneer:
                 self.buyers_history = self.initialize_buyers_history()
 
             for seller in range(self.k_sellers):
-                buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.initialize_auction_parameters(auction_round, seller)
+                buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.initialize_auction_parameters(
+                    auction_round, seller)
                 for buyer in range(self.n_buyers):
                     if self.buyers_already_won[buyer] and not self.level_commitment_activated:
                         continue
@@ -82,7 +115,11 @@ class Auctioneer:
         return random.random() * self.max_starting_price
 
     def calculate_bid(self, buyer_id, item_type, seller_id, starting_price):
-        bid = self.bidding_factor[buyer_id, item_type, seller_id] * starting_price
+        if self.bidding_factor_strategy[buyer_id] == 1:
+            bid = self.bidding_factor[buyer_id][item_type] * starting_price
+        else:
+            bid = self.bidding_factor[buyer_id][seller_id] * starting_price
+
         if not self.level_commitment_activated \
                 or not self.buyers_already_won[buyer_id]:
             # If the buyer flag is not ON it means the buyer hasn't win an auction in this round yet
@@ -115,10 +152,15 @@ class Auctioneer:
 
     def update_alphas(self, winner, seller, item):
         for buyer in range(self.n_buyers):
-            if buyer == winner:
-                self.bidding_factor[buyer, item, seller] *= self.decrease_bidding_factor[buyer]
+            if self.bidding_factor_strategy[buyer] == 1:
+                second_dimension = item
             else:
-                self.bidding_factor[buyer, item, seller] *= self.increase_bidding_factor[buyer]
+                second_dimension = seller
+
+            if buyer == winner:
+                self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+            else:
+                self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
 
     def initialize_buyers_flag(self):
         return [False for buyer in range(self.n_buyers)]
@@ -126,7 +168,7 @@ class Auctioneer:
     def initialize_buyers_history(self):
         """
         The history of the buyers saves the information needed to calculate the bid when level commitment is allowed.
-        This informations is:
+        This information is:
             - profit made, stored in position 0
             - penalty to pay, stored in position 1
         """
