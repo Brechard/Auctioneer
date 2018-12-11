@@ -143,7 +143,7 @@ class Auctioneer:
 
         if not self.level_commitment_activated \
                 or not self.buyers_already_won[buyer_id]:
-            # If the buyer flag is not ON it means the buyer hasn't win an auction in this round yet
+            # If the buyer flag is not ON it means the buyer hasn't won an auction in this round yet
             return bid
         auction, seller = self.get_auction_with_winner(buyer_id)
         previous_profit, market_price = auction.winner_profit, auction.market_price
