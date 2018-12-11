@@ -1,5 +1,6 @@
 from auctioneer import Auctioneer
 import unittest
+import numpy as np
 
 
 class AuctioneerTest(unittest.TestCase):
@@ -8,18 +9,60 @@ class AuctioneerTest(unittest.TestCase):
         # TODO Initialize common variables among all tests
         pass
 
-    def test_initialize_variables_returns_proper_values(self):
-        # TODO assert that function produces expected outcome
-        self.assertTrue(True)
+    def test_constructor_is_initializing_correct_values(self):
+        random.seed(0)
+        auctioneer = Auctioneer(2, 3, 5, 3, False)
 
-    def test_initialize_alpha_values_returns_proper_values(self):
-        # TODO assert that function produces expected outcome
-        self.assertTrue(True)
+        self.assertEqual(range(2), auctioneer.m_item_types)
+        self.assertEqual(3, auctioneer.k_sellers)
+        self.assertEqual(5, auctioneer.n_buyers)
+        self.assertEqual(3, auctioneer.r_rounds)
 
-    def test_initialize_delta_values_returns_proper_values(self):
-        # TODO assert that function returns expected outcome
-        self.assertTrue(True)
+        self.assertEqual(100, auctioneer.max_starting_price)
+        self.assertEqual(0.1, auctioneer.penalty_factor)
 
-    def test_run_simulator_calls_proper_sequence(self):
-        # TODO assert that function returns expected outcome
-        self.assertTrue(True)
+        self.assertEqual([False, False, False, False, False], auctioneer.buyers_already_won)
+        self.assertTrue(auctioneer.increase_bidding_factor.all() in range(1, 2))
+        # self.assertTrue(auctioneer.decrease_bidding_factor.all() in float(0, 1))
+
+        self.assertEqual(0, auctioneer.market_price.all())
+        self.assertEqual(0, auctioneer.buyers_profits.all())
+        self.assertEqual(0, auctioneer.sellers_profits.all())
+
+        self.assertEqual(0, len(auctioneer.history))
+
+    def test_real_case_scenario(self):
+        starting_prices = [
+            [40, 50, 20],
+            [20, 15, 25]
+        ]
+        auctioneer = Auctioneer(starting_prices, 2, 3, 5, 2, False)
+        auctioneer.increase_bidding_factor = [2, 3, 4, 5, 6]
+        auctioneer.decrease_bidding_factor = [0.6, 0.5, 0.4, 0.3, 0.2]
+
+        auctioneer.bidding_factor = np.array([
+            [
+                [1, 2, 3],
+                [4, 5, 6]
+            ],
+            [
+                [1.68791717, 1.43217411, 1.1566692],
+                [1.20532547, 1.05372195, 1.19885528]
+            ],
+            [
+                [1.71709178, 1.83604667, 1.4957177],
+                [1.50015315, 1.77615324, 1.00780864]
+            ],
+            [
+                [1.62403167, 1.51698165, 1.74709901],
+                [1.84536679, 1.29700791, 1.08997174]
+            ],
+            [
+                [1.81391097, 1.2531242, 1.01217679],
+                [1.15969576, 1.55215565, 1.34450197]
+            ]
+        ])
+
+        auctioneer.start_auction()
+
+        self.assertEqual([], auctioneer.market_price)

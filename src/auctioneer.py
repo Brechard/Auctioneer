@@ -4,7 +4,7 @@ import random
 
 class Auctioneer:
 
-    def __init__(self, M=3, K=4, N=10, R=3, level_comm_flag=False):
+    def __init__(self, starting_prices, M=3, K=4, N=10, R=3, level_comm_flag=False):
 
         self.m_item_types = range(M)
         self.k_sellers = K
@@ -33,7 +33,7 @@ class Auctioneer:
 
         self.history = {}
 
-        self.start_auction()
+        self.starting_prices = starting_prices
 
     def start_auction(self):
         # TODO fill market price, buyers and sellers profit matrix
@@ -43,7 +43,7 @@ class Auctioneer:
                 self.buyers_history = self.initialize_buyers_history()
 
             for seller in range(self.k_sellers):
-                buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.calculate_auction_parameters(seller)
+                buyers_bid, item, n_buyer_auction, starting_price, total_bid = self.initialize_auction_parameters(auction_round, seller)
                 for buyer in range(self.n_buyers):
                     if self.buyers_already_won[buyer] and not self.level_commitment_activated:
                         continue
@@ -67,8 +67,11 @@ class Auctioneer:
                 self.sellers_profits[auction_round, seller] += price_to_pay
                 # self.history[auction_round] = {seller, [winner, price]}
 
-    def calculate_auction_parameters(self, seller):
-        starting_price = self.calculate_starting_price()
+    def initialize_auction_parameters(self, auction_round, seller):
+        try:
+            starting_price = self.starting_prices[auction_round][seller]
+        except IndexError:
+            starting_price = self.calculate_starting_price()
         n_buyer_auction = 0
         total_bid = 0
         buyers_bid = {}
@@ -103,7 +106,10 @@ class Auctioneer:
         valid_bids = sorted(valid_bids, reverse=True)
 
         winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]][0]
-        price_to_pay = valid_bids[1]
+        try:
+            price_to_pay = valid_bids[1]
+        except IndexError:
+            price_to_pay = valid_bids[0]
 
         return winner_id, price_to_pay
 
@@ -145,6 +151,6 @@ class Auctioneer:
 
 
 if __name__ == '__main__':
-    auctioneer = Auctioneer(level_comm_flag=True)
-    # auctioneer.run_simulation()
+    auctioneer = Auctioneer(level_comm_flag=False)
+    auctioneer.start_auction()
     auctioneer.print_outcome()
