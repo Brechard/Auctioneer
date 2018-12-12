@@ -5,8 +5,8 @@ from prettytable import PrettyTable
 
 class Auctioneer:
 
-    def __init__(self, bidding_factor_strategy=[], starting_prices=[], M_types=3, K_sellers=4,
-                 N_buyers=10, R_rounds=3, level_comm_flag=False):
+    def __init__(self, bidding_factor_strategy = [], starting_prices = [], M_types = 3, K_sellers = 4,
+                 N_buyers = 10, R_rounds = 3, level_comm_flag = False):
         """
         :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
         :param starting_prices: Debug purposes, starting prices can be forced this way.
@@ -41,8 +41,8 @@ class Auctioneer:
         self.bidding_factor_strategy = bidding_factor_strategy
         self.bidding_factor = self.calculate_bidding_factor()
 
-        self.increase_bidding_factor = np.random.uniform(1, 2, size=self.n_buyers)
-        self.decrease_bidding_factor = np.random.uniform(0, 1, size=self.n_buyers)
+        self.increase_bidding_factor = np.random.uniform(1, 2, size = self.n_buyers)
+        self.decrease_bidding_factor = np.random.uniform(0, 1, size = self.n_buyers)
 
         self.market_price = np.zeros((self.r_rounds, self.k_sellers))
         self.buyers_profits = np.zeros((self.r_rounds, self.n_buyers))
@@ -108,16 +108,16 @@ class Auctioneer:
         if new_profit - previous_fee > previous_winner_profit - new_fee:
             # It is profitable to keep the new item, pay fee to previous seller
             previous_auction.return_item(previous_fee,
-                                         new_item_profit=new_profit,
-                                         new_item_fee=new_fee,
-                                         seller_item_kept=seller,
-                                         new_item_price=price_to_pay)
+                                         kept_item_profit = new_profit,
+                                         kept_item_fee = new_fee,
+                                         seller_item_kept = seller,
+                                         kept_item_price = price_to_pay)
         else:
             auction.return_item(new_fee,
-                                new_item_profit=previous_winner_profit,
-                                new_item_fee=previous_fee,
-                                seller_item_kept=previous_seller,
-                                new_item_price=previous_auction.price_paid)
+                                kept_item_profit = previous_winner_profit,
+                                kept_item_fee = previous_fee,
+                                seller_item_kept = previous_seller,
+                                kept_item_price = previous_auction.price_paid)
 
     def choose_winner(self, bids, market_price):
         # TODO dealing with two people with the same bid as winning bid
@@ -129,7 +129,7 @@ class Auctioneer:
 
             valid_bids.append(bid)
 
-        valid_bids = sorted(valid_bids, reverse=True)
+        valid_bids = sorted(valid_bids, reverse = True)
 
         winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]][0]
         try:
@@ -208,6 +208,13 @@ class Auctioneer:
         print("The sellers profits are:")
         print(self.sellers_profits)
 
+    def print_factors(self):
+        initial_table = PrettyTable()
+        initial_table.field_names = [""] + ["B" + str(buyer) for buyer in range(self.n_buyers)]
+        initial_table.add_row(["Increasing factor"] + self.increase_bidding_factor)
+        initial_table.add_row(["Decreasing factor"] + self.decrease_bidding_factor)
+
+
     def print_round(self, round_number):
         print()
         print("Round", round_number, "history")
@@ -226,6 +233,7 @@ class Auctioneer:
         print("------------------------------------------------------")
 
     def start_auction(self):
+        self.print_factors()
         for auction_round in range(self.r_rounds):
             self.buyers_already_won = self.initialize_buyers_flag()
             if self.level_commitment_activated:
@@ -244,12 +252,12 @@ class Auctioneer:
 
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
-                auction = self.store_auction_history(winner=winner,
-                                                     price_paid=price_to_pay,
-                                                     starting_price=starting_price,
-                                                     market_price=market_price,
-                                                     bid_history=buyers_bid,
-                                                     previous_alphas=self.get_alphas(seller, item))
+                auction = self.store_auction_history(winner = winner,
+                                                     price_paid = price_to_pay,
+                                                     starting_price = starting_price,
+                                                     market_price = market_price,
+                                                     bid_history = buyers_bid,
+                                                     previous_alphas = self.get_alphas(seller, item))
 
                 if self.level_commitment_activated and self.buyers_already_won[winner]:
                     # The buyer already won an auction in this round so he has to choose which one to return
@@ -283,24 +291,27 @@ class Auction:
         self.bid_history = ['%.2f' % elem for elem in bid_history.values()]
         self.previous_alphas = ['%.2f' % elem for elem in previous_alphas]
         self.new_alphas = []
-        self.new_item_profit = None
-        self.new_item_fee = None
+        self.kept_item_profit = None
+        self.kept_item_fee = None
         self.seller_item_kept = None
         self.original_info = None
-        self.new_item_price = None
+        self.kept_item_price = None
 
-    def return_item(self, fee, new_item_profit, new_item_fee, seller_item_kept, new_item_price):
+    def return_item(self, fee, kept_item_profit, kept_item_fee, seller_item_kept, kept_item_price):
         self.original_info = [self.winner_profit, fee, self.seller_profit]
         self.seller_profit = fee
         self.winner_profit = - fee
         self.item_returned = True
-        self.new_item_profit = new_item_profit
-        self.new_item_fee = new_item_fee
-        self.new_item_price = new_item_price
+        self.kept_item_profit = kept_item_profit
+        self.kept_item_fee = kept_item_fee
+        self.kept_item_price = kept_item_price
         self.seller_item_kept = seller_item_kept
 
     def set_new_alphas(self, new_alphas):
         self.new_alphas = ['%.2f' % elem for elem in new_alphas]
+        self.factor = ['%.2f' % (float(new_alpha) / float(old_alpha)) for new_alpha, old_alpha in
+                       zip(new_alphas, self.previous_alphas)]
+
 
     def print_auction(self, n):
         # Printing buyer info
@@ -316,6 +327,7 @@ class Auction:
         buyer_info.add_row(["Old Alpha"] + self.previous_alphas)
         buyer_info.add_row(["Bids"] + self.bid_history)
         buyer_info.add_row(["New Alpha"] + self.new_alphas)
+        buyer_info.add_row(["Multiplier"] + self.factor)
 
         print(buyer_info)
 
@@ -335,17 +347,17 @@ class Auction:
         # Printing return info
         if self.item_returned:
             return_info = PrettyTable()
-            field_names = ["Buyer profit if kept this item", "Buyer fee for canceling this item",
-                           "Profit of seller before cancel", "Buyer profit with new item",
-                           "Buyer fee if canceling new item", "Price of the new item",
-                           "Seller of the new item", "Final Profit (new + fee paid)"]
+            field_names = ["Buyer profit for discarded item", "Buyer fee for canceling this item",
+                           "Profit of seller before cancel", "Buyer profit for kept item",
+                           "Buyer fee if canceling kept item", "Seller of the kept item",
+                           "Final Profit (profit - fee paid)"]
             return_info.field_names = field_names
             row = [self.original_info[0], self.original_info[1],
-                   self.original_info[2], self.new_item_profit,
-                   self.new_item_fee, self.new_item_price,
-                   self.seller_item_kept, self.new_item_profit - self.original_info[1]]
+                   self.original_info[2], self.kept_item_profit,
+                   self.kept_item_fee, self.seller_item_kept,
+                   self.kept_item_profit - self.original_info[1]]
             row = ['%.2f' % elem for elem in row]
-            row[6] = self.seller_item_kept
+            row[5] = self.seller_item_kept
             return_info.add_row(row)
             print(return_info)
             print()
@@ -359,6 +371,6 @@ class Auction:
 
 
 if __name__ == '__main__':
-    auctioneer = Auctioneer(level_comm_flag=True)
+    auctioneer = Auctioneer(level_comm_flag = True)
     auctioneer.start_auction()
     auctioneer.print_outcome()
