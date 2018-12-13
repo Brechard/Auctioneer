@@ -2,6 +2,7 @@ import numpy as np
 import random
 from auction import Auction
 from prettytable import PrettyTable
+import matplotlib.pyplot as plt
 
 
 class Auctioneer:
@@ -284,8 +285,37 @@ class Auctioneer:
         self.auctions_history[auction_round].append(auction)
         return auction
 
+    def plot_statistics(self):
+        starting_prices = []
+        market_prices = []
+        bid_history = []
+        profit_history = []
+        for round in self.auctions_history:
+            for auction in round:
+                starting_prices.append(auction.starting_price)
+                market_prices.append(auction.market_price)
+                bid_history.append(auction.bid_history)
+
+        # Plot price history
+        plt.figure(1)
+        plt.plot(starting_prices)
+        plt.plot(market_prices)
+        plt.ylabel('Price')
+        plt.xlabel('Auctions')
+
+
+
+        # Plot profits
+        plt.figure(2)
+        for seller in range(self.k_sellers):
+            plt.plot(self.sellers_profits[:, seller])
+        plt.ylabel('Seller profits')
+        plt.xlabel('Rounds')
+        plt.show()
+
 
 if __name__ == '__main__':
     auctioneer = Auctioneer(level_comm_flag=True)
     auctioneer.start_auction()
     auctioneer.print_outcome()
+    auctioneer.plot_statistics()
