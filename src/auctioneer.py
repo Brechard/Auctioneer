@@ -349,12 +349,13 @@ class Auction:
             field_names = ["Buyer profit for discarded item", "Buyer fee for canceling this item",
                            "Profit of seller before cancel", "Buyer profit for kept item",
                            "Buyer fee if canceling kept item", "Seller of the kept item",
-                           "Final Profit (profit - fee paid)"]
+                           "Final Profit (profit - fee paid)", "Profit if kept this item"]
             return_info.field_names = field_names
             row = [self.original_info[0], self.original_info[1],
                    self.original_info[2], self.kept_item_profit,
                    self.kept_item_fee, self.seller_item_kept,
-                   self.kept_item_profit - self.original_info[1]]
+                   self.kept_item_profit - self.original_info[1],
+                   self.original_info[0] - self.kept_item_fee]
             row = ['%.2f' % elem for elem in row]
             row[5] = self.seller_item_kept
             return_info.add_row(row)
