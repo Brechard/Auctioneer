@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 class Auctioneer:
 
-    def __init__(self, bidding_factor_strategy = [], starting_prices = [], M_types = 3, K_sellers = 4,
-                 N_buyers = 10, R_rounds = 3, level_comm_flag = False):
+    def __init__(self, penalty_factor, bidding_factor_strategy=[], starting_prices=[], M_types=3, K_sellers=4,
+                 N_buyers=10, R_rounds=3, level_comm_flag=False):
         """
         :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
         :param starting_prices: Debug purposes, starting prices can be forced this way.
@@ -29,7 +29,7 @@ class Auctioneer:
         self.r_rounds = R_rounds
 
         self.max_starting_price = 100
-        self.penalty_factor = 0.1
+        self.penalty_factor = penalty_factor
 
         # If level commitment is activated sellers cannot cancel a won auction
         self.level_commitment_activated = level_comm_flag
@@ -42,8 +42,8 @@ class Auctioneer:
         self.bidding_factor_strategy = bidding_factor_strategy
         self.bidding_factor = self.calculate_bidding_factor()
 
-        self.increase_bidding_factor = np.random.uniform(1, 2, size = self.n_buyers)
-        self.decrease_bidding_factor = np.random.uniform(0, 1, size = self.n_buyers)
+        self.increase_bidding_factor = np.random.uniform(1, 2, size=self.n_buyers)
+        self.decrease_bidding_factor = np.random.uniform(0, 1, size=self.n_buyers)
 
         self.market_price = np.zeros((self.r_rounds, self.k_sellers))
         self.buyers_profits = np.zeros((self.r_rounds, self.n_buyers))
@@ -108,16 +108,16 @@ class Auctioneer:
         if new_profit - previous_fee > previous_winner_profit - new_fee:
             # It is profitable to keep the new item, pay fee to previous seller
             previous_auction.return_item(previous_fee,
-                                         kept_item_profit = new_profit,
-                                         kept_item_fee = new_fee,
-                                         seller_item_kept = seller,
-                                         kept_item_price = price_to_pay)
+                                         kept_item_profit=new_profit,
+                                         kept_item_fee=new_fee,
+                                         seller_item_kept=seller,
+                                         kept_item_price=price_to_pay)
         else:
             auction.return_item(new_fee,
-                                kept_item_profit = previous_winner_profit,
-                                kept_item_fee = previous_fee,
-                                seller_item_kept = previous_seller,
-                                kept_item_price = previous_auction.price_paid)
+                                kept_item_profit=previous_winner_profit,
+                                kept_item_fee=previous_fee,
+                                seller_item_kept=previous_seller,
+                                kept_item_price=previous_auction.price_paid)
 
     def choose_winner(self, bids, market_price):
         # TODO dealing with two people with the same bid as winning bid
@@ -129,7 +129,7 @@ class Auctioneer:
 
             valid_bids.append(bid)
 
-        valid_bids = sorted(valid_bids, reverse = True)
+        valid_bids = sorted(valid_bids, reverse=True)
 
         winner_id = [key for key in bids.keys() if bids[key] == valid_bids[0]][0]
         try:
@@ -260,14 +260,14 @@ class Auctioneer:
 
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
-                auction = self.store_auction_history(winner = winner,
-                                                     price_paid = price_to_pay,
-                                                     starting_price = starting_price,
-                                                     market_price = market_price,
-                                                     bid_history = buyers_bid,
-                                                     previous_alphas = self.get_alphas(seller, item),
-                                                     auction_round = auction_round,
-                                                     item_kind = item)
+                auction = self.store_auction_history(winner=winner,
+                                                     price_paid=price_to_pay,
+                                                     starting_price=starting_price,
+                                                     market_price=market_price,
+                                                     bid_history=buyers_bid,
+                                                     previous_alphas=self.get_alphas(seller, item),
+                                                     auction_round=auction_round,
+                                                     item_kind=item)
 
                 if self.level_commitment_activated and self.buyers_already_won[winner]:
                     # The buyer already won an auction in this round so he has to choose which one to return
@@ -289,7 +289,7 @@ class Auctioneer:
     def plot_statistics(self):
         market_prices = np.zeros((self.r_rounds, self.k_sellers))
         bid_history = []
-        for n,round in enumerate(self.auctions_history):
+        for n, round in enumerate(self.auctions_history):
             for seller in range(self.k_sellers):
                 market_prices[n, seller] = round[seller].market_price
 
@@ -324,12 +324,11 @@ class Auctioneer:
         plt.legend()
         plt.xticks(range(self.r_rounds))
 
-
         plt.show()
 
 
 if __name__ == '__main__':
-    auctioneer = Auctioneer(level_comm_flag = True)
+    auctioneer = Auctioneer(0.1, level_comm_flag=True)
     auctioneer.start_auction()
     auctioneer.print_outcome()
     auctioneer.plot_statistics()
