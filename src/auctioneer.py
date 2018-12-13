@@ -47,6 +47,7 @@ class Auctioneer:
 
         self.market_price = np.zeros((self.r_rounds, self.k_sellers))
         self.buyers_profits = np.zeros((self.r_rounds, self.n_buyers))
+        self.cumulative_buyers_profits = np.zeros((self.n_buyers, self.r_rounds))
         self.sellers_profits = np.zeros((self.r_rounds, self.k_sellers))
 
         self.starting_prices = self.calculate_starting_prices(starting_prices)
@@ -71,9 +72,9 @@ class Auctioneer:
     def calculate_bidding_factor(self):
         """
         Bidding factor strategies:
-            0 - Depends only on the seller
-            1 - Depends only on the kind of item
-        :return:
+            0 - Depends only on the seller using proposed one by assignment
+            1 - Depends only on the kind of item using proposed one by assignment
+        :return: bidding factor
         """
         bidding_factor = []
         for buyer in range(self.n_buyers):
@@ -191,15 +192,6 @@ class Auctioneer:
         if str_1:
             print(str_1_table)
 
-    def print_outcome(self):
-        # TODO Implement print_outcome
-        print("The market price history is:")
-        print(self.market_price)
-        print("The buyers profits are:")
-        print(self.buyers_profits)
-        print("The sellers profits are:")
-        print(self.sellers_profits)
-
     def print_factors(self):
         initial_table = PrettyTable()
         initial_table.field_names = [""] + ["B" + str(buyer) for buyer in range(self.n_buyers)]
@@ -240,6 +232,11 @@ class Auctioneer:
             self.buyers_profits[auction_round, auction.winner] += auction.winner_profit
             self.sellers_profits[auction_round, seller] += auction.seller_profit
             seller += 1
+
+        for buyer in range(self.n_buyers):
+            self.cumulative_buyers_profits[buyer][auction_round] = self.cumulative_buyers_profits[
+                                                                       buyer, auction_round - 1] + self.buyers_profits[
+                                                                       auction_round, buyer]
 
     def start_auction(self):
         self.print_factors()
@@ -288,7 +285,7 @@ class Auctioneer:
 
     def plot_statistics(self):
         market_prices = np.zeros((self.r_rounds, self.k_sellers))
-        bid_history = []
+
         for n, round in enumerate(self.auctions_history):
             for seller in range(self.k_sellers):
                 market_prices[n, seller] = round[seller].market_price
@@ -297,7 +294,7 @@ class Auctioneer:
 
         plt.figure(1)
         for seller in range(self.k_sellers):
-            plt.plot(market_prices[:, seller], label="Seller " + str(seller))
+            plt.semilogy(market_prices[:, seller], label="Seller " + str(seller))
         plt.title('Price history across all rounds for each seller')
         plt.ylabel('Price')
         plt.xlabel('Auctions')
@@ -308,7 +305,7 @@ class Auctioneer:
         # Plot seller profits
         plt.figure(2)
         for seller in range(self.k_sellers):
-            plt.plot(self.sellers_profits[:, seller], label="Seller " + str(seller))
+            plt.semilogy(self.sellers_profits[:, seller], label="Seller " + str(seller))
         plt.title('Seller profits across all auctions')
         plt.ylabel('Seller profits')
         plt.xlabel('Rounds')
@@ -317,12 +314,23 @@ class Auctioneer:
             plt.xticks(range(self.r_rounds))
 
         # Plot seller profits
-        plt.figure(3)
+        # plt.figure(3)
+        # for buyer in range(self.n_buyers):
+        #     plt.semilogy(self.buyers_profits[:, buyer], label="Buyer " + str(buyer))
+        # plt.title('Buyer profits across all auctions')
+        # plt.ylabel('Buyer profits')
+        # plt.xlabel('Rounds')
+
+        # Plot seller profits
+        plt.figure()
         for buyer in range(self.n_buyers):
-            plt.plot(self.buyers_profits[:, buyer], label="Buyer " + str(buyer))
-        plt.title('Buyer profits across all auctions')
+            plt.semilogy(self.cumulative_buyers_profits[buyer], label="Buyer " + str(buyer))
+        plt.title('Buyer cumulative profits across all auctions')
         plt.ylabel('Buyer profits')
         plt.xlabel('Rounds')
+
+        print(self.cumulative_buyers_profits)
+
         plt.legend()
         if self.r_rounds < 10:
             plt.xticks(range(self.r_rounds))
@@ -332,11 +340,11 @@ class Auctioneer:
 
 if __name__ == '__main__':
     auctioneer = Auctioneer(0.1,
-                            M_types=3,
-                            K_sellers=4,
-                            N_buyers=10,
-                            R_rounds=10,
+                            M_types=1,
+                            K_sellers=3,
+                            N_buyers=5,
+                            R_rounds=100,
                             level_comm_flag=True)
     auctioneer.start_auction()
-    auctioneer.print_outcome()
     auctioneer.plot_statistics()
+    auctioneer.print_alphas()

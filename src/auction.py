@@ -16,7 +16,7 @@ class Auction:
         # Debug purposes
         # ['%.2f' % elem for elem in bid_history.values()]
         self.bid_history = bid_history
-        self.previous_alphas = ['%.2f' % elem for elem in previous_alphas]
+        self.previous_alphas = previous_alphas
         self.new_alphas = []
         self.kept_item_profit = None
         self.kept_item_fee = None
@@ -35,11 +35,12 @@ class Auction:
         self.seller_item_kept = seller_item_kept
 
     def set_new_alphas(self, new_alphas):
-        self.new_alphas = ['%.2f' % elem for elem in new_alphas]
-        self.factor = ['%.2f' % (float(new_alpha) / float(old_alpha)) for new_alpha, old_alpha in
+        self.new_alphas = ['%.4f' % elem for elem in new_alphas]
+        self.factor = ['%.4f' % (float(new_alpha) / float(old_alpha)) for new_alpha, old_alpha in
                        zip(new_alphas, self.previous_alphas)]
 
     def print_auction(self, n):
+        self.previous_alphas = ['%.4f' % elem for elem in self.previous_alphas]
         # Printing buyer info
         buyer_info = PrettyTable()
         field_names = ["Auction #" + str(n)]
