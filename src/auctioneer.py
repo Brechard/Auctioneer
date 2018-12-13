@@ -302,7 +302,8 @@ class Auctioneer:
         plt.ylabel('Price')
         plt.xlabel('Auctions')
         plt.legend()
-        plt.xticks(range(self.r_rounds))
+        if self.r_rounds < 10:
+            plt.xticks(range(self.r_rounds))
 
         # Plot seller profits
         plt.figure(2)
@@ -312,7 +313,8 @@ class Auctioneer:
         plt.ylabel('Seller profits')
         plt.xlabel('Rounds')
         plt.legend()
-        plt.xticks(range(self.r_rounds))
+        if self.r_rounds < 10:
+            plt.xticks(range(self.r_rounds))
 
         # Plot seller profits
         plt.figure(3)
@@ -322,13 +324,19 @@ class Auctioneer:
         plt.ylabel('Buyer profits')
         plt.xlabel('Rounds')
         plt.legend()
-        plt.xticks(range(self.r_rounds))
+        if self.r_rounds < 10:
+            plt.xticks(range(self.r_rounds))
 
         plt.show()
 
 
 if __name__ == '__main__':
-    auctioneer = Auctioneer(0.1, level_comm_flag=True)
+    auctioneer = Auctioneer(0.1,
+                            M_types=3,
+                            K_sellers=4,
+                            N_buyers=10,
+                            R_rounds=10,
+                            level_comm_flag=True)
     auctioneer.start_auction()
     auctioneer.print_outcome()
     auctioneer.plot_statistics()
