@@ -325,10 +325,3 @@ class Auctioneer:
         plt.xticks(range(self.r_rounds))
 
         plt.show()
-
-
-if __name__ == '__main__':
-    auctioneer = Auctioneer(0.1, level_comm_flag=True)
-    auctioneer.start_auction()
-    auctioneer.print_outcome()
-    auctioneer.plot_statistics()
