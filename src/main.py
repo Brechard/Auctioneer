@@ -36,7 +36,8 @@ number_of_rounds = request_numeric_input("Number of rounds: ")
 level_commitment_activated = request_boolean_input("Should use level commitment? y/n ")
 
 # Execute with parameters
-auctioneer = Auctioneer([],
+auctioneer = Auctioneer(0.1,
+                        [],
                         [],
                         number_of_product_types,
                         number_of_sellers,
