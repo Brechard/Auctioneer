@@ -1,5 +1,6 @@
 import numpy as np
 import random
+from auction import Auction
 from prettytable import PrettyTable
 
 
@@ -18,7 +19,7 @@ class Auctioneer:
         """
         if len(bidding_factor_strategy) == 0:
             # If the strategy is not passed, it is set to default 0
-            bidding_factor_strategy = [0 for n in range(N_buyers)]
+            bidding_factor_strategy = [np.random.randint(0, 2, 1) for n in range(N_buyers)]
 
         self.m_item_types = range(M_types)
         self.k_sellers = K_sellers
@@ -47,6 +48,7 @@ class Auctioneer:
         self.sellers_profits = np.zeros((self.r_rounds, self.k_sellers))
 
         self.starting_prices = self.calculate_starting_prices(starting_prices)
+        self.print_alphas()
 
     def calculate_bid(self, buyer_id, item_type, seller_id, starting_price, auction_round):
         if self.bidding_factor_strategy[buyer_id] == 1:
@@ -75,7 +77,7 @@ class Auctioneer:
         for buyer in range(self.n_buyers):
             if self.bidding_factor_strategy[buyer] == 1:
                 bidding_factor.append(
-                    np.random.uniform(1, 2, self.m_item_types)
+                    np.random.uniform(1, 2, len(self.m_item_types))
                 )
             else:
                 bidding_factor.append(
@@ -165,29 +167,27 @@ class Auctioneer:
     def initialize_buyers_flag(self):
         return [False for buyer in range(self.n_buyers)]
 
-    def update_alphas(self, winner, seller, item):
-        new_alphas = []
-        for buyer in range(self.n_buyers):
-            if self.bidding_factor_strategy[buyer] == 1:
-                second_dimension = item
+    def print_alphas(self):
+        buyer = 0
+        str_0_table = PrettyTable()
+        str_0_table.field_names = ["Alphas"] + ["S" + str(seller) for seller in range(self.k_sellers)]
+        str_1_table = PrettyTable()
+        str_1_table.field_names = ["Alphas"] + ["Type " + str(item_type) for item_type in self.m_item_types]
+        str_0 = False
+        str_1 = False
+        for strategy in self.bidding_factor_strategy:
+            if strategy == 1:
+                str_1_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
+                str_1 = True
             else:
-                second_dimension = seller
+                str_0_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
+                str_0 = True
 
-            if buyer == winner:
-                self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
-            else:
-                self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
-
-            new_alphas.append(self.bidding_factor[buyer][second_dimension])
-
-        return new_alphas
-
-    def update_profits(self, auction_round):
-        seller = 0
-        for auction in self.auctions_history[auction_round]:
-            self.buyers_profits[auction_round, auction.winner] += auction.winner_profit
-            self.sellers_profits[auction_round, seller] += auction.seller_profit
-            seller += 1
+            buyer += 1
+        if str_0:
+            print(str_0_table)
+        if str_1:
+            print(str_1_table)
 
     def print_outcome(self):
         # TODO Implement print_outcome
@@ -214,6 +214,30 @@ class Auctioneer:
             seller += 1
         print()
         print("------------------------------------------------------")
+
+    def update_alphas(self, winner, seller, item):
+        new_alphas = []
+        for buyer in range(self.n_buyers):
+            if self.bidding_factor_strategy[buyer] == 1:
+                second_dimension = item
+            else:
+                second_dimension = seller
+
+            if buyer == winner:
+                self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+            else:
+                self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
+
+            new_alphas.append(self.bidding_factor[buyer][second_dimension])
+
+        return new_alphas
+
+    def update_profits(self, auction_round):
+        seller = 0
+        for auction in self.auctions_history[auction_round]:
+            self.buyers_profits[auction_round, auction.winner] += auction.winner_profit
+            self.sellers_profits[auction_round, seller] += auction.seller_profit
+            seller += 1
 
     def start_auction(self):
         self.print_factors()
@@ -259,111 +283,6 @@ class Auctioneer:
         auction = Auction(starting_price, market_price, price_paid, winner, bid_history, previous_alphas, item_kind)
         self.auctions_history[auction_round].append(auction)
         return auction
-
-
-class Auction:
-
-    def __init__(self, starting_price, market_price, price_paid, winner, bid_history, previous_alphas, item_kind):
-        self.starting_price = starting_price
-        self.market_price = market_price
-        self.price_paid = price_paid
-        self.winner = winner
-        self.seller_profit = price_paid
-        self.winner_profit = self.market_price - self.price_paid
-        self.item_kind = item_kind
-        self.item_returned = False
-
-        # Debug purposes
-        # ['%.2f' % elem for elem in bid_history.values()]
-        self.bid_history = bid_history
-        self.previous_alphas = ['%.2f' % elem for elem in previous_alphas]
-        self.new_alphas = []
-        self.kept_item_profit = None
-        self.kept_item_fee = None
-        self.seller_item_kept = None
-        self.original_info = None
-        self.kept_item_price = None
-
-    def return_item(self, fee, kept_item_profit, kept_item_fee, seller_item_kept, kept_item_price):
-        self.original_info = [self.winner_profit, fee, self.seller_profit]
-        self.seller_profit = fee
-        self.winner_profit = - fee
-        self.item_returned = True
-        self.kept_item_profit = kept_item_profit
-        self.kept_item_fee = kept_item_fee
-        self.kept_item_price = kept_item_price
-        self.seller_item_kept = seller_item_kept
-
-    def set_new_alphas(self, new_alphas):
-        self.new_alphas = ['%.2f' % elem for elem in new_alphas]
-        self.factor = ['%.2f' % (float(new_alpha) / float(old_alpha)) for new_alpha, old_alpha in
-                       zip(new_alphas, self.previous_alphas)]
-
-    def print_auction(self, n):
-        # Printing buyer info
-        buyer_info = PrettyTable()
-        field_names = ["Auction #" + str(n)]
-        old_alphas = ["Old Alpha"]
-        new_alphas = ["New Alpha"]
-        multiplier = ["Multiplier"]
-        bids = ["Bids"]
-        for buyer, bid in self.bid_history.items():
-            heading = "B" + str(buyer)
-            if buyer == self.winner:
-                heading = heading + " - W"
-            field_names.append(heading)
-            old_alphas.append(self.previous_alphas[buyer])
-            new_alphas.append(self.new_alphas[buyer])
-            multiplier.append(self.factor[buyer])
-            bids.append(round(bid, 2))
-
-        buyer_info.field_names = field_names
-        buyer_info.add_row(old_alphas)
-        buyer_info.add_row(bids)
-        buyer_info.add_row(new_alphas)
-        buyer_info.add_row(multiplier)
-
-        print(buyer_info)
-
-        # Printing market prices info
-        auction_info = PrettyTable()
-
-        field_names = ["Starting price", "Market Price", "Winner", "Price to pay", "Buyer profit", "Seller profit",
-                       "Item kind"]
-        auction_info.field_names = field_names
-        row = [self.starting_price, self.market_price, self.winner, self.price_paid, self.winner_profit,
-               self.seller_profit]
-        row = ['%.2f' % elem for elem in row]
-        row[2] = self.winner
-        row.append(self.item_kind)
-        auction_info.add_row(row)
-        print(auction_info)
-
-        # Printing return info
-        if self.item_returned:
-            return_info = PrettyTable()
-            field_names = ["Buyer profit for discarded item", "Buyer fee for canceling this item",
-                           "Profit of seller before cancel", "Buyer profit for kept item",
-                           "Buyer fee if canceling kept item", "Seller of the kept item",
-                           "Final Profit (profit - fee paid)", "Profit if kept this item"]
-            return_info.field_names = field_names
-            row = [self.original_info[0], self.original_info[1],
-                   self.original_info[2], self.kept_item_profit,
-                   self.kept_item_fee, self.seller_item_kept,
-                   self.kept_item_profit - self.original_info[1],
-                   self.original_info[0] - self.kept_item_fee]
-            row = ['%.2f' % elem for elem in row]
-            row[5] = self.seller_item_kept
-            return_info.add_row(row)
-            print(return_info)
-        print()
-        print()
-
-    def round_dict_values(self, dict):
-        for dict_value in dict:
-            for k, v in dict_value.items():
-                dict_value[k] = round(v, 2)
-        return dict
 
 
 if __name__ == '__main__':
