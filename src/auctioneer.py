@@ -297,26 +297,34 @@ class Auctioneer:
 
         plt.figure(1)
         for seller in range(self.k_sellers):
-            plt.plot(market_prices[:, seller])
+            plt.plot(market_prices[:, seller], label="Seller " + str(seller))
         plt.title('Price history across all rounds for each seller')
         plt.ylabel('Price')
         plt.xlabel('Auctions')
+        plt.legend()
+        plt.xticks(range(self.r_rounds))
 
         # Plot seller profits
         plt.figure(2)
         for seller in range(self.k_sellers):
-            plt.plot(self.sellers_profits[:, seller])
+            plt.plot(self.sellers_profits[:, seller], label="Seller " + str(seller))
         plt.title('Seller profits across all auctions')
         plt.ylabel('Seller profits')
         plt.xlabel('Rounds')
+        plt.legend()
+        plt.xticks(range(self.r_rounds))
 
         # Plot seller profits
         plt.figure(3)
         for buyer in range(self.n_buyers):
-            plt.plot(self.buyers_profits[:, buyer])
+            plt.plot(self.buyers_profits[:, buyer], label="Buyer " + str(buyer))
         plt.title('Buyer profits across all auctions')
         plt.ylabel('Buyer profits')
         plt.xlabel('Rounds')
+        plt.legend()
+        plt.xticks(range(self.r_rounds))
+
+
         plt.show()
 
 
