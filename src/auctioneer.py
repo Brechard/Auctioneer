@@ -22,7 +22,7 @@ class Auctioneer:
         if len(bidding_factor_strategy) == 0:
             # If the strategy is not passed, it is set to default 0
             # bidding_factor_strategy = [np.random.randint(0, 2, 1) for n in range(N_buyers)]
-            bidding_factor_strategy = [2 for n in range(N_buyers)]
+            bidding_factor_strategy = [0 for n in range(N_buyers)]
 
         self.m_item_types = range(M_types)
         self.k_sellers = K_sellers
@@ -92,7 +92,7 @@ class Auctioneer:
         for buyer in range(self.n_buyers):
             if self.bidding_factor_strategy[buyer] == 0:
                 bidding_factor.append(
-                    np.random.uniform(1, 2, len(self.k_sellers))
+                    np.random.uniform(1, 2, self.k_sellers)
                 )
 
             elif self.bidding_factor_strategy[buyer] == 1:
