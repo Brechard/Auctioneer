@@ -292,6 +292,11 @@ class Auctioneer:
                     self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
                 new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
+
+                # If the bidding factor is less than 1, replace it with 1
+                if self.bidding_factor[buyer][second_dimension] < 1:
+                    self.bidding_factor[buyer][second_dimension] = 1
+
         return new_alphas
 
     def update_profits(self, auction_round):
