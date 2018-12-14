@@ -196,11 +196,11 @@ class Auctioneer:
             return
         buyer = 0
         str_0_table = PrettyTable()
-        str_0_table.field_names = ["Alphas"] + ["S" + str(seller) for seller in range(self.k_sellers)]
+        str_0_table.field_names = ["S-0"] + ["S" + str(seller) for seller in range(self.k_sellers)]
         str_1_table = PrettyTable()
-        str_1_table.field_names = ["Alphas"] + ["Type " + str(item_type) for item_type in self.m_item_types]
+        str_1_table.field_names = ["S-1"] + ["Type " + str(item_type) for item_type in self.m_item_types]
         str_2_table = PrettyTable()
-        str_2_table.field_names = ["Alphas"] + ["Type " + str(item_type) for item_type in self.m_item_types]
+        str_2_table.field_names = ["S-2"] + ["Type " + str(item_type) for item_type in self.m_item_types]
 
         str_0 = False
         str_1 = False
