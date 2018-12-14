@@ -1,9 +1,10 @@
 from auctioneer import Auctioneer
 import matplotlib.pyplot as plt
 import numpy as np
+import statistics
 
-n_buyers = 5
-k_sellers = 5
+n_buyers = 4
+k_sellers = 2
 
 
 def create_auctioneer(strategy=0):
@@ -13,7 +14,7 @@ def create_auctioneer(strategy=0):
                       K_sellers=k_sellers,
                       N_buyers=n_buyers,
                       R_rounds=100,
-                      level_comm_flag=False,
+                      level_comm_flag=True,
                       debug=False)
 
 
@@ -52,4 +53,32 @@ def effect_inc_decr_bid_factors():
     plt.show()
 
 
-effect_inc_decr_bid_factors()
+def check_bias():
+    max_profit = np.zeros(n_buyers)
+    for n in range(10000):
+        auctioneer = create_auctioneer(2)
+        auctioneer.bidding_factor = []
+        for buyer in range(n_buyers):
+            # 3 because strategy 2 depends on the item type
+            if buyer == 2:
+                bid_fact = np.random.uniform(1.1, 1.3, 3)
+            else:
+                bid_fact = np.random.uniform(1, 1.001, 3)
+
+            auctioneer.bidding_factor.append(bid_fact)
+
+        auctioneer.increase_bidding_factor = [1.2 for n in range(n_buyers)]
+        auctioneer.decrease_bidding_factor = [0.8 for n in range(n_buyers)]
+        auctioneer.start_auction()
+        buyers_prof = auctioneer.cumulative_buyers_profits[:, auctioneer.r_rounds - 1]
+
+        for buyer in range(n_buyers):
+            if buyers_prof[buyer] == max(buyers_prof):
+                max_profit[buyer] += 1
+
+    [print("The buyer", buyer, "was the one with more profit", max_profit[buyer], "times") for buyer in range(n_buyers)]
+
+
+check_bias()
+
+# effect_inc_decr_bid_factors()
