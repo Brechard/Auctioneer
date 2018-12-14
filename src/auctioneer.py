@@ -1,14 +1,16 @@
-import numpy as np
 import random
-from auction import Auction
-from prettytable import PrettyTable
+
 import matplotlib.pyplot as plt
+import numpy as np
+from prettytable import PrettyTable
+
+from auction import Auction
 
 
 class Auctioneer:
 
     def __init__(self, penalty_factor, bidding_factor_strategy=[], starting_prices=[], M_types=3, K_sellers=4,
-                 N_buyers=10, R_rounds=3, level_comm_flag=False, debug=True):
+                 N_buyers=10, R_rounds=3, level_comm_flag=False, debug=True, universal_maximum_price=100):
         """
         :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
         :param starting_prices: Debug purposes, starting prices can be forced this way.
@@ -21,15 +23,15 @@ class Auctioneer:
         self.debug = debug
         if len(bidding_factor_strategy) == 0:
             # If the strategy is not passed, it is set to default 0
-            # bidding_factor_strategy = [np.random.randint(0, 2, 1) for n in range(N_buyers)]
-            bidding_factor_strategy = [0 for n in range(N_buyers)]
+            bidding_factor_strategy = [np.random.randint(2, 4, 1) for n in range(N_buyers)]
+            # bidding_factor_strategy = [0 for n in range(N_buyers)]
 
         self.m_item_types = range(M_types)
         self.k_sellers = K_sellers
         self.n_buyers = N_buyers
         self.r_rounds = R_rounds
 
-        self.max_starting_price = 100
+        self.max_starting_price = universal_maximum_price
         self.penalty_factor = penalty_factor
 
         # If level commitment is activated sellers cannot cancel a won auction
@@ -90,8 +92,8 @@ class Auctioneer:
             1 - Depends only on the kind of item using proposed one by assignment
             2 - Depends on the kind of item, but has a max value to avoid price explosion.
                 If alpha bigger than 2, decrease it using decrease factor.
-            3 - Depends on the kind of item, but checks the market price to see if previous
-                alpha update was helpful or not
+            3 - Depends on the kind of item, if the bid is higher than market price, bidding factor is multiplied by
+                the decreasing factor while if it is lower multiply by the increasing factor.
         :return: bidding factor
         """
         bidding_factor = []
@@ -357,7 +359,6 @@ class Auctioneer:
                 else:
 
                     if bids[buyer] > np.mean(list(bids.values())):
-
                         self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
                     else:
                         self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
@@ -474,11 +475,11 @@ class Auctioneer:
 
 
 if __name__ == '__main__':
-    buyers = 5
+    buyers = 10
     auctioneer = Auctioneer(0.1,
-                            bidding_factor_strategy=[2 for n in range(buyers)],
-                            M_types=2,
-                            K_sellers=3,
+                            # bidding_factor_strategy=[2 for n in range(buyers)],
+                            M_types=3,
+                            K_sellers=5,
                             N_buyers=buyers,
                             R_rounds=50,
                             level_comm_flag=False,
