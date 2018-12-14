@@ -1,14 +1,14 @@
-from auctioneer import Auctioneer
 import matplotlib.pyplot as plt
 import numpy as np
-import statistics
+
+from auctioneer import Auctioneer
 
 n_buyers = 4
 k_sellers = 2
 
 
-def create_auctioneer(strategy=0):
-    return Auctioneer(penalty_factor=0.1,
+def create_auctioneer(strategy=0, penalty_factor=0.1):
+    return Auctioneer(penalty_factor=penalty_factor,
                       bidding_factor_strategy=[strategy for n in range(n_buyers)],
                       M_types=3,
                       K_sellers=k_sellers,
@@ -53,9 +53,9 @@ def effect_inc_decr_bid_factors():
     plt.show()
 
 
-def check_bias():
+def check_bias(times=1000):
     max_profit = np.zeros(n_buyers)
-    for n in range(1000):
+    for n in range(times):
         auctioneer = create_auctioneer(2)
         auctioneer.bidding_factor = []
         for buyer in range(n_buyers):
@@ -74,6 +74,22 @@ def check_bias():
     [print("Buyer", buyer, "was the one with more profit", max_profit[buyer], "times") for buyer in range(n_buyers)]
 
 
-check_bias()
+def check_penalty_factor_effect():
+    differences = []
+    for n in range(200):
+        times = 100
+        diffs = 0
+        for t in range(times):
+            auctioneer = create_auctioneer(2, n / 100)
+            auctioneer.start_auction()
+            diffs += calculate_avg_difference(auctioneer.starting_prices,
+                                              auctioneer.market_price[auctioneer.r_rounds - 1])
+        differences.append(min(300, diffs/times))
 
+    plt.plot(differences)
+    plt.show()
+
+
+check_penalty_factor_effect()
+# check_bias()
 # effect_inc_decr_bid_factors()

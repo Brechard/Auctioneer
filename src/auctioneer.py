@@ -23,8 +23,8 @@ class Auctioneer:
         self.debug = debug
         if len(bidding_factor_strategy) == 0:
             # If the strategy is not passed, it is set to default 0
-            bidding_factor_strategy = [np.random.randint(2, 4, 1) for n in range(N_buyers)]
-            # bidding_factor_strategy = [0 for n in range(N_buyers)]
+            # bidding_factor_strategy = [np.random.randint(2, 4, 1) for n in range(N_buyers)]
+            bidding_factor_strategy = [2 for n in range(N_buyers)]
 
         self.m_item_types = range(M_types)
         self.k_sellers = K_sellers
@@ -428,7 +428,7 @@ class Auctioneer:
 if __name__ == '__main__':
     buyers = 10
     auctioneer = Auctioneer(0.1,
-                            bidding_factor_strategy=[3 for n in range(buyers)],
+                            bidding_factor_strategy=[0 for n in range(buyers)],
                             M_types=2,
                             K_sellers=3,
                             N_buyers=buyers,
