@@ -292,10 +292,9 @@ class Auctioneer:
                     self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
                 new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
-
-                # If the bidding factor is less than 1, replace it with 1
-                if self.bidding_factor[buyer][second_dimension] < 1:
-                    self.bidding_factor[buyer][second_dimension] = 1
+            # If the bidding factor is less than 1, replace it with 1
+            if self.bidding_factor[buyer][second_dimension] < 1:
+                self.bidding_factor[buyer][second_dimension] = 1
 
         return new_alphas
 
@@ -403,11 +402,13 @@ class Auctioneer:
 
 
 if __name__ == '__main__':
+    buyers = 5
     auctioneer = Auctioneer(0.1,
+                            bidding_factor_strategy=[0 for n in range(buyers)],
                             M_types=2,
-                            K_sellers=2,
-                            N_buyers=3,
-                            R_rounds=10,
+                            K_sellers=3,
+                            N_buyers=buyers,
+                            R_rounds=50,
                             level_comm_flag=False,
                             debug=True)
     auctioneer.start_auction()
