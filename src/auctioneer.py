@@ -149,7 +149,7 @@ class Auctioneer:
             valid_bids.append(bid)
 
         if len(valid_bids) == 0:
-            valid_bids.append(bids[0])
+            valid_bids.append(next(iter(bids.values())))
 
         valid_bids = sorted(valid_bids, reverse=True)
 
@@ -404,7 +404,7 @@ class Auctioneer:
 if __name__ == '__main__':
     buyers = 5
     auctioneer = Auctioneer(0.1,
-                            bidding_factor_strategy=[0 for n in range(buyers)],
+                            bidding_factor_strategy=[2 for n in range(buyers)],
                             M_types=2,
                             K_sellers=3,
                             N_buyers=buyers,

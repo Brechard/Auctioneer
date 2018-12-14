@@ -2,18 +2,18 @@ from auctioneer import Auctioneer
 import matplotlib.pyplot as plt
 import numpy as np
 
-n_buyers = 2
-k_sellers = 2
+n_buyers = 5
+k_sellers = 5
 
 
-def create_auctioneer():
+def create_auctioneer(strategy=0):
     return Auctioneer(penalty_factor=0.1,
-                      bidding_factor_strategy=[],
+                      bidding_factor_strategy=[strategy for n in range(n_buyers)],
                       M_types=3,
                       K_sellers=k_sellers,
                       N_buyers=n_buyers,
-                      R_rounds=10,
-                      level_comm_flag=True,
+                      R_rounds=100,
+                      level_comm_flag=False,
                       debug=False)
 
 
@@ -31,7 +31,7 @@ def effect_inc_decr_bid_factors():
     differences = np.zeros((i_range, d_range))
     for increasing_delta in range(i_range):
         for decreasing_delta in range(1, d_range):
-            auctioneer = create_auctioneer()
+            auctioneer = create_auctioneer(2)
             auctioneer.increase_bidding_factor = [1 + increasing_delta / i_range for n in range(n_buyers)]
             auctioneer.decrease_bidding_factor = [0 + decreasing_delta / d_range for n in range(n_buyers)]
             auctioneer.start_auction()
