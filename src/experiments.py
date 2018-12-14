@@ -5,16 +5,17 @@ from auctioneer import Auctioneer
 
 n_buyers = 4
 k_sellers = 2
+rounds = 100
 
 
-def create_auctioneer(strategy=0, penalty_factor=0.1):
+def create_auctioneer(strategy=0, penalty_factor=0.1, level_flag=True):
     return Auctioneer(penalty_factor=penalty_factor,
                       bidding_factor_strategy=[strategy for n in range(n_buyers)],
                       M_types=3,
                       K_sellers=k_sellers,
                       N_buyers=n_buyers,
-                      R_rounds=100,
-                      level_comm_flag=True,
+                      R_rounds=rounds,
+                      level_comm_flag=level_flag,
                       debug=False)
 
 
@@ -74,26 +75,77 @@ def check_bias(times=1000):
     [print("Buyer", buyer, "was the one with more profit", max_profit[buyer], "times") for buyer in range(n_buyers)]
 
 
-def check_penalty_factor_effect():
+def check_penalty_factor_effect(strategy=2):
     differences = []
+    times_items_returned = []
+    buyers_profits = []
+    sellers_profits = []
     penalty_factors = []
+    bad_trades = []
     for n in range(200):
-        times = 30
-        diffs = 0
-        penalty_factors.append(n/100)
-        auctioneer = create_auctioneer(2, n / 100)
-        for t in range(times):
+        penalty_factor = n / 400
+        times_for_avg = 30
+        penalty_factors.append(penalty_factor)
+
+        diffs = []
+        times_returned = []
+        buyers_profit = []
+        sellers_profit = []
+        n_bad_trade = []
+
+        for t in range(times_for_avg):
+            auctioneer = create_auctioneer(strategy=strategy,
+                                           penalty_factor=penalty_factor,
+                                           level_flag=True)
             auctioneer.start_auction()
-            diffs += calculate_avg_difference(auctioneer.starting_prices,
-                                              auctioneer.market_price[auctioneer.r_rounds - 1])
-        differences.append(min(300, diffs / times))
+
+            diffs.append(calculate_avg_difference(auctioneer.starting_prices,
+                                              auctioneer.market_price[auctioneer.r_rounds - 1]))
+            times_returned.append(auctioneer.times_items_returned / (rounds * k_sellers))
+
+            buyers_profit.append(np.average(auctioneer.cumulative_buyers_profits[:, rounds - 1]))
+            sellers_profit.append(np.average(auctioneer.cumulative_sellers_profits[:, rounds - 1]))
+
+            if auctioneer.times_items_returned == 0:
+                n_bad_trade.append(0)
+            else:
+                n_bad_trade.append(auctioneer.times_bad_trade / auctioneer.times_items_returned)
+
+        differences.append(min(300, np.mean(diffs)))
+        times_items_returned.append(np.mean(times_returned))
+        buyers_profits.append(np.mean(buyers_profit))
+        sellers_profits.append(np.mean(sellers_profit))
+        bad_trades.append(np.mean(n_bad_trade))
 
     plt.plot(penalty_factors, differences)
     plt.xlabel("Penalty factor")
     plt.ylabel("Difference between market price and initial price")
+
+    plt.figure()
+    plt.plot(penalty_factors, times_items_returned)
+    plt.xlabel("Penalty factor")
+    plt.ylabel("Percentage of number of items cancelled")
+
+    plt.figure()
+    plt.plot(penalty_factors, buyers_profits)
+    plt.xlabel("Penalty factor")
+    plt.ylabel("Average profit of buyers")
+
+    plt.figure()
+    plt.plot(penalty_factors, sellers_profits)
+    plt.xlabel("Penalty factor")
+    plt.ylabel("Average profit of sellers")
+
+    plt.figure()
+    plt.plot(penalty_factors, bad_trades)
+    plt.xlabel("Penalty factor")
+    plt.ylabel("Percentage of bad trades for buyers")
+
     plt.show()
 
 
-check_penalty_factor_effect()
+check_penalty_factor_effect(2)
+# check_penalty_factor_effect(3)
+
 # check_bias()
 # effect_inc_decr_bid_factors()

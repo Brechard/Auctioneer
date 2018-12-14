@@ -63,6 +63,9 @@ class Auctioneer:
         self.starting_prices = self.calculate_starting_prices(starting_prices)
         self.print_alphas()
 
+        self.times_items_returned = 0
+        self.times_bad_trade = 0
+
     def calculate_bid(self, buyer_id, item_type, seller_id, starting_price, auction_round):
 
         if self.second_dimension == self.k_sellers:
@@ -114,11 +117,13 @@ class Auctioneer:
         return self.penalty_factor * price_paid
 
     def choose_item_to_keep(self, auction, market_price, price_to_pay, winner, seller, auction_round):
+        self.times_items_returned += 1
         previous_auction, previous_seller = self.get_auction_with_winner(winner, auction_round)
         previous_winner_profit = previous_auction.winner_profit
         previous_fee = self.calculate_fee(previous_auction.price_paid)
         new_profit = market_price - price_to_pay
         new_fee = self.calculate_fee(price_to_pay)
+
         if new_profit - previous_fee > previous_winner_profit - new_fee:
             # It is profitable to keep the new item, pay fee to previous seller
             previous_auction.return_item(previous_fee,
@@ -126,12 +131,18 @@ class Auctioneer:
                                          kept_item_fee=new_fee,
                                          seller_item_kept=seller,
                                          kept_item_price=price_to_pay)
+
+            if new_profit - previous_fee < 0:
+                self.times_bad_trade += 1
         else:
             auction.return_item(new_fee,
                                 kept_item_profit=previous_winner_profit,
                                 kept_item_fee=previous_fee,
                                 seller_item_kept=previous_seller,
                                 kept_item_price=previous_auction.price_paid)
+
+            if previous_winner_profit - new_fee < 0:
+                self.times_bad_trade += 1
 
     def choose_winner(self, bids, market_price):
         # TODO dealing with two people with the same bid as winning bid
