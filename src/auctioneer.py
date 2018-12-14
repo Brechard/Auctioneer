@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 class Auctioneer:
 
     def __init__(self, penalty_factor, bidding_factor_strategy=[], starting_prices=[], M_types=3, K_sellers=4,
-                 N_buyers=10, R_rounds=3, level_comm_flag=False):
+                 N_buyers=10, R_rounds=3, level_comm_flag=False, debug=True):
         """
         :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
         :param starting_prices: Debug purposes, starting prices can be forced this way.
@@ -18,6 +18,7 @@ class Auctioneer:
         :param R_rounds: Number of rounds
         :param level_comm_flag: Flag to say if level commitment is allowed or not
         """
+        self.debug = debug
         if len(bidding_factor_strategy) == 0:
             # If the strategy is not passed, it is set to default 0
             # bidding_factor_strategy = [np.random.randint(0, 2, 1) for n in range(N_buyers)]
@@ -171,7 +172,9 @@ class Auctioneer:
     def initialize_buyers_flag(self):
         return [False for buyer in range(self.n_buyers)]
 
-    def print_alphas(self):
+    def print_alphas(self, extra_debug=False):
+        if not self.debug and not extra_debug:
+            return
         buyer = 0
         str_0_table = PrettyTable()
         str_0_table.field_names = ["Alphas"] + ["S" + str(seller) for seller in range(self.k_sellers)]
@@ -193,14 +196,18 @@ class Auctioneer:
         if str_1:
             print(str_1_table)
 
-    def print_factors(self):
+    def print_factors(self, extra_debug=False):
+        if not self.debug and not extra_debug:
+            return
         initial_table = PrettyTable()
         initial_table.field_names = [""] + ["B" + str(buyer) for buyer in range(self.n_buyers)]
         initial_table.add_row(["Increasing factor"] + ['%.2f' % elem for elem in self.increase_bidding_factor])
         initial_table.add_row(["Decreasing factor"] + ['%.2f' % elem for elem in self.decrease_bidding_factor])
         print(initial_table)
 
-    def print_round(self, round_number):
+    def print_round(self, round_number, extra_debug=False):
+        if not self.debug and not extra_debug:
+            return
         print()
         print("Round", round_number, "history")
         seller = 0
@@ -291,12 +298,11 @@ class Auctioneer:
     def plot_statistics(self):
         market_prices = np.zeros((self.r_rounds, self.k_sellers))
 
-        for n, round in enumerate(self.auctions_history):
+        for n, auctions_round in enumerate(self.auctions_history):
             for seller in range(self.k_sellers):
-                market_prices[n, seller] = round[seller].market_price
+                market_prices[n, seller] = auctions_round[seller].market_price
 
         # Plot price history
-
         for seller in range(self.k_sellers):
             plt.semilogy(market_prices[:, seller], label="Seller " + str(seller))
         plt.title('Price history across all rounds for each seller')
@@ -305,17 +311,6 @@ class Auctioneer:
         plt.legend()
         if self.r_rounds < 10:
             plt.xticks(range(self.r_rounds))
-
-        # # Plot seller profits
-        # plt.figure(2)
-        # for seller in range(self.k_sellers):
-        #     plt.semilogy(self.sellers_profits[:, seller], label="Seller " + str(seller))
-        # plt.title('Seller profits across all auctions')
-        # plt.ylabel('Seller profits')
-        # plt.xlabel('Rounds')
-        # plt.legend()
-        # if self.r_rounds < 10:
-        #     plt.xticks(range(self.r_rounds))
 
         # Plot seller profits
         plt.figure()
@@ -328,24 +323,13 @@ class Auctioneer:
         if self.r_rounds < 10:
             plt.xticks(range(self.r_rounds))
 
-        # Plot seller profits
-        # plt.figure(3)
-        # for buyer in range(self.n_buyers):
-        #     plt.semilogy(self.buyers_profits[:, buyer], label="Buyer " + str(buyer))
-        # plt.title('Buyer profits across all auctions')
-        # plt.ylabel('Buyer profits')
-        # plt.xlabel('Rounds')
-
-        # Plot seller profits
+        # Plot Buyers profits
         plt.figure()
         for buyer in range(self.n_buyers):
-            plt.semilogy(self.cumulative_buyers_profits[buyer], label="Buyer " + str(buyer))
+            plt.plot(self.cumulative_buyers_profits[buyer], label="Buyer " + str(buyer))
         plt.title('Buyer cumulative profits across all auctions')
         plt.ylabel('Buyer profits')
         plt.xlabel('Rounds')
-
-        print(self.cumulative_buyers_profits)
-
         plt.legend()
         if self.r_rounds < 10:
             plt.xticks(range(self.r_rounds))
@@ -355,11 +339,13 @@ class Auctioneer:
 
 if __name__ == '__main__':
     auctioneer = Auctioneer(0.1,
-                            M_types=1,
-                            K_sellers=1,
-                            N_buyers=2,
-                            R_rounds=100,
-                            level_comm_flag=True)
+                            M_types=2,
+                            K_sellers=2,
+                            N_buyers=3,
+                            R_rounds=30,
+                            level_comm_flag=False,
+                            debug=True)
     auctioneer.start_auction()
     auctioneer.plot_statistics()
+    print("\nBidding factors when the simulation is finished")
     auctioneer.print_alphas()
