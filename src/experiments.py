@@ -5,11 +5,12 @@ import statistics
 
 n_buyers = 4
 k_sellers = 2
+strategy = [4 for n in range(n_buyers)]
+strategy[0] = 2
 
-
-def create_auctioneer(strategy=0):
+def create_auctioneer():
     return Auctioneer(penalty_factor=0.1,
-                      bidding_factor_strategy=[strategy for n in range(n_buyers)],
+                      bidding_factor_strategy=strategy,
                       M_types=3,
                       K_sellers=k_sellers,
                       N_buyers=n_buyers,
