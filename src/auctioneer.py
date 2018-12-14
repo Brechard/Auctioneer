@@ -67,21 +67,7 @@ class Auctioneer:
         elif self.second_dimension == self.m_item_types:
             second_dimension = item_type
 
-        if self.bidding_factor_strategy[buyer_id] == 0:
-
-            bid = self.bidding_factor[buyer_id][second_dimension] * starting_price
-
-        elif self.bidding_factor_strategy[buyer_id] == 1:
-
-            bid = self.bidding_factor[buyer_id][second_dimension] * starting_price
-
-        elif self.bidding_factor_strategy[buyer_id] == 2:
-
-            bid = self.bidding_factor[buyer_id][second_dimension] * starting_price
-
-        elif self.bidding_factor_strategy[buyer_id] == 3:
-
-            bid = self.bidding_factor[buyer_id][second_dimension] * starting_price
+        bid = self.bidding_factor[buyer_id][second_dimension] * starting_price
 
         if not self.level_commitment_activated \
                 or not self.buyers_already_won[buyer_id]:
@@ -106,25 +92,11 @@ class Auctioneer:
         """
         bidding_factor = []
         for buyer in range(self.n_buyers):
-            if self.bidding_factor_strategy[buyer] == 0:
-                bidding_factor.append(
-                    np.random.uniform(1, 2, self.second_dimension)
-                )
 
-            elif self.bidding_factor_strategy[buyer] == 1:
-                bidding_factor.append(
-                    np.random.uniform(1, 2, self.second_dimension)
-                )
+            bidding_factor.append(
+                np.random.uniform(1, 2, self.second_dimension)
+            )
 
-            elif self.bidding_factor_strategy[buyer] == 2:
-                bidding_factor.append(
-                    np.random.uniform(1, 2, self.second_dimension)
-                )
-
-            elif self.bidding_factor_strategy[buyer] == 3:
-                bidding_factor.append(
-                    np.random.uniform(1, 2, self.second_dimension)
-                )
         return bidding_factor
 
     def calculate_starting_prices(self, starting_prices):
