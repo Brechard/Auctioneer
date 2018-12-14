@@ -51,8 +51,8 @@ class Auctioneer:
         self.bidding_factor_strategy = bidding_factor_strategy
         self.bidding_factor = self.calculate_bidding_factor()
 
-        self.increase_bidding_factor = np.random.uniform(1, 2, size=self.n_buyers)
-        self.decrease_bidding_factor = np.random.uniform(0, 1, size=self.n_buyers)
+        self.increase_bidding_factor = np.random.uniform(1, 1.2, size=self.n_buyers)
+        self.decrease_bidding_factor = np.random.uniform(0.8, 1, size=self.n_buyers)
 
         self.market_price = np.zeros((self.r_rounds, self.k_sellers))
         self.buyers_profits = np.zeros((self.r_rounds, self.n_buyers))
@@ -99,7 +99,7 @@ class Auctioneer:
         bidding_factor = []
         for buyer in range(self.n_buyers):
             bidding_factor.append(
-                np.random.uniform(1, 2, self.second_dimension)
+                np.random.uniform(1, 1.2, self.second_dimension)
             )
 
         return bidding_factor
