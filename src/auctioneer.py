@@ -69,6 +69,10 @@ class Auctioneer:
 
             bid = self.bidding_factor[buyer_id][item_type] * starting_price
 
+        elif self.bidding_factor_strategy[buyer_id] == 3:
+
+            bid = self.bidding_factor[buyer_id][item_type] * starting_price
+
         if not self.level_commitment_activated \
                 or not self.buyers_already_won[buyer_id]:
             # If the buyer flag is not ON it means the buyer hasn't win an auction in this round yet
@@ -85,7 +89,9 @@ class Auctioneer:
             0 - Depends only on the seller using proposed one by assignment
             1 - Depends only on the kind of item using proposed one by assignment
             2 - Depends on the kind of item, but has a max value to avoid price explosion.
-                If alpha bigger
+                If alpha bigger than 2, decrease it using decrease factor.
+            3 - Depends on the kind of item, but checks the market price to see if previous
+                alpha update was helpful or not
         :return: bidding factor
         """
         bidding_factor = []
@@ -101,6 +107,11 @@ class Auctioneer:
                 )
 
             elif self.bidding_factor_strategy[buyer] == 2:
+                bidding_factor.append(
+                    np.random.uniform(1, 2, len(self.m_item_types))
+                )
+
+            elif self.bidding_factor_strategy[buyer] == 3:
                 bidding_factor.append(
                     np.random.uniform(1, 2, len(self.m_item_types))
                 )
@@ -201,10 +212,13 @@ class Auctioneer:
         str_1_table.field_names = ["S-1"] + ["Type " + str(item_type) for item_type in self.m_item_types]
         str_2_table = PrettyTable()
         str_2_table.field_names = ["S-2"] + ["Type " + str(item_type) for item_type in self.m_item_types]
+        str_3_table = PrettyTable()
+        str_3_table.field_names = ["S-3"] + ["Type " + str(item_type) for item_type in self.m_item_types]
 
         str_0 = False
         str_1 = False
         str_2 = False
+        str_3 = False
 
         for strategy in self.bidding_factor_strategy:
 
@@ -223,6 +237,11 @@ class Auctioneer:
                 str_2_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
                 str_2 = True
 
+            elif strategy == 3:
+
+                str_3_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
+                str_3 = True
+
             buyer += 1
         if str_0:
             print(str_0_table)
@@ -230,6 +249,8 @@ class Auctioneer:
             print(str_1_table)
         if str_2:
             print(str_2_table)
+        if str_3:
+            print(str_3_table)
 
     def print_factors(self, extra_debug=False):
         if not self.debug and not extra_debug:
@@ -252,32 +273,51 @@ class Auctioneer:
         print()
         print("------------------------------------------------------")
 
-    def update_alphas(self, winner, seller, item):
+    def update_alphas(self, winner, seller, item, bids):
 
         new_alphas = []
         for buyer in range(self.n_buyers):
+
+            # Strategy 0 - Depends only on the seller using proposed one by assignment
             if self.bidding_factor_strategy[buyer] == 0:
 
                 second_dimension = seller
 
                 if buyer == winner:
+
                     self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+
+                elif self.buyers_already_won[buyer] and not self.level_commitment_activated:
+
+                    self.bidding_factor[buyer][second_dimension] = self.bidding_factor[buyer][second_dimension]
+
                 else:
+
                     self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
 
                 new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
+            # Strategy 1 - Depends only on the kind of item using proposed one by assignment
             elif self.bidding_factor_strategy[buyer] == 1:
 
                 second_dimension = item
 
                 if buyer == winner:
+
                     self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+
+                elif self.buyers_already_won[buyer] and not self.level_commitment_activated:
+
+                    self.bidding_factor[buyer][second_dimension] = self.bidding_factor[buyer][second_dimension]
+
                 else:
+
                     self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
 
                 new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
+            # Strategy 2 - Depends on the kind of item, but has a max value to avoid price explosion.
+            # If alpha bigger than 2, decrease it using decrease factor.
             elif self.bidding_factor_strategy[buyer] == 2:
 
                 second_dimension = item
@@ -287,9 +327,41 @@ class Auctioneer:
                 # Do not update
 
                 if buyer != winner and self.bidding_factor[buyer][second_dimension] < 2:
+
                     self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
+
+                elif self.buyers_already_won[buyer] and not self.level_commitment_activated:
+
+                    self.bidding_factor[buyer][second_dimension] = self.bidding_factor[buyer][second_dimension]
+
                 elif buyer != winner and self.bidding_factor[buyer][second_dimension] > 2:
+
                     self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+
+                new_alphas.append(self.bidding_factor[buyer][second_dimension])
+
+            # Strategy 3 - Depends on the kind of item, but checks the market price
+            # to see if previous alpha update was helpful or not
+            elif self.bidding_factor_strategy[buyer] == 3:
+
+                second_dimension = item
+
+                if buyer == winner:
+
+                    self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+
+                elif self.buyers_already_won[buyer] and not self.level_commitment_activated:
+
+                    self.bidding_factor[buyer][second_dimension] = self.bidding_factor[buyer][second_dimension]
+
+                else:
+
+                    if bids[buyer] > np.mean(list(bids.values())):
+
+                        self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+                    else:
+                        self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
+
                 new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
             # If the bidding factor is less than 1, replace it with 1
@@ -346,10 +418,10 @@ class Auctioneer:
                     # The buyer already won an auction in this round so he has to choose which one to return
                     self.choose_item_to_keep(auction, market_price, price_to_pay, winner, seller, auction_round)
 
-                self.buyers_already_won[winner] = True
-                new_alphas = self.update_alphas(winner, seller, item)
-                auction.set_new_alphas(new_alphas)
                 self.market_price[auction_round, seller] = market_price
+                new_alphas = self.update_alphas(winner, seller, item, buyers_bid)
+                auction.set_new_alphas(new_alphas)
+                self.buyers_already_won[winner] = True
             self.update_profits(auction_round)
             self.print_round(auction_round)
 
@@ -368,7 +440,7 @@ class Auctioneer:
 
         # Plot price history
         for seller in range(self.k_sellers):
-            plt.semilogy(market_prices[:, seller], label="Seller " + str(seller))
+            plt.plot(market_prices[:, seller], label="Seller " + str(seller))
         plt.title('Price history across all rounds for each seller')
         plt.ylabel('Price')
         plt.xlabel('Auctions')
@@ -379,7 +451,7 @@ class Auctioneer:
         # Plot seller profits
         plt.figure()
         for seller in range(self.k_sellers):
-            plt.semilogy(self.cumulative_sellers_profits[seller], label="Seller " + str(seller))
+            plt.plot(self.cumulative_sellers_profits[seller], label="Seller " + str(seller))
         plt.title('Seller cumulative profits across all auctions')
         plt.ylabel('Seller profits')
         plt.xlabel('Rounds')
@@ -404,7 +476,7 @@ class Auctioneer:
 if __name__ == '__main__':
     buyers = 5
     auctioneer = Auctioneer(0.1,
-                            bidding_factor_strategy=[0 for n in range(buyers)],
+                            bidding_factor_strategy=[3 for n in range(buyers)],
                             M_types=2,
                             K_sellers=3,
                             N_buyers=buyers,
