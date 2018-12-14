@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 class Auctioneer:
 
-    def __init__(self, penalty_factor, bidding_factor_strategy = [], alphaSeller = True, starting_prices = [], M_types = 3, K_sellers = 4,
+    def __init__(self, penalty_factor, bidding_factor_strategy = [], use_seller = True, starting_prices = [], M_types = 3, K_sellers = 4,
                  N_buyers = 10, R_rounds = 3, level_comm_flag = False, debug = True):
         """
         :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
@@ -41,7 +41,7 @@ class Auctioneer:
         self.sellers_types = [random.sample(self.m_item_types, 1)[0] for seller in range(self.k_sellers)]
 
         # Assign second dimension of alpha following the input flag
-        if self.useSeller:
+        if use_seller:
             self.second_dimension = self.k_sellers
         else: self.second_dimension = self.m_item_types
 
