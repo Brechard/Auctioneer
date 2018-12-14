@@ -76,17 +76,21 @@ def check_bias(times=1000):
 
 def check_penalty_factor_effect():
     differences = []
+    penalty_factors = []
     for n in range(200):
-        times = 100
+        times = 30
         diffs = 0
+        penalty_factors.append(n/100)
+        auctioneer = create_auctioneer(2, n / 100)
         for t in range(times):
-            auctioneer = create_auctioneer(2, n / 100)
             auctioneer.start_auction()
             diffs += calculate_avg_difference(auctioneer.starting_prices,
                                               auctioneer.market_price[auctioneer.r_rounds - 1])
-        differences.append(min(300, diffs/times))
+        differences.append(min(300, diffs / times))
 
-    plt.plot(differences)
+    plt.plot(penalty_factors, differences)
+    plt.xlabel("Penalty factor")
+    plt.ylabel("Difference between market price and initial price")
     plt.show()
 
 
