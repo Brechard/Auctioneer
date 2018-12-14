@@ -22,7 +22,7 @@ class Auctioneer:
         if len(bidding_factor_strategy) == 0:
             # If the strategy is not passed, it is set to default 0
             # bidding_factor_strategy = [np.random.randint(0, 2, 1) for n in range(N_buyers)]
-            bidding_factor_strategy = [0 for n in range(N_buyers)]
+            bidding_factor_strategy = [2 for n in range(N_buyers)]
 
         self.m_item_types = range(M_types)
         self.k_sellers = K_sellers
@@ -56,10 +56,18 @@ class Auctioneer:
         self.print_alphas()
 
     def calculate_bid(self, buyer_id, item_type, seller_id, starting_price, auction_round):
-        if self.bidding_factor_strategy[buyer_id] == 1:
-            bid = self.bidding_factor[buyer_id][item_type] * starting_price
-        else:
+
+        if self.bidding_factor_strategy[buyer_id] == 0:
+
             bid = self.bidding_factor[buyer_id][seller_id] * starting_price
+
+        elif self.bidding_factor_strategy[buyer_id] == 1:
+
+            bid = self.bidding_factor[buyer_id][item_type] * starting_price
+
+        elif self.bidding_factor_strategy[buyer_id] == 2:
+
+            bid = self.bidding_factor[buyer_id][item_type] * starting_price
 
         if not self.level_commitment_activated \
                 or not self.buyers_already_won[buyer_id]:
@@ -76,17 +84,24 @@ class Auctioneer:
         Bidding factor strategies:
             0 - Depends only on the seller using proposed one by assignment
             1 - Depends only on the kind of item using proposed one by assignment
+            2 - Depends on the kind of item, but has a max value to avoid price explosion
         :return: bidding factor
         """
         bidding_factor = []
         for buyer in range(self.n_buyers):
-            if self.bidding_factor_strategy[buyer] == 1:
+            if self.bidding_factor_strategy[buyer] == 0:
+                bidding_factor.append(
+                    np.random.uniform(1, 2, len(self.k_sellers))
+                )
+
+            elif self.bidding_factor_strategy[buyer] == 1:
                 bidding_factor.append(
                     np.random.uniform(1, 2, len(self.m_item_types))
                 )
-            else:
+
+            elif self.bidding_factor_strategy[buyer] == 2:
                 bidding_factor.append(
-                    np.random.uniform(1, 2, self.k_sellers)
+                    np.random.uniform(1, 2, len(self.m_item_types))
                 )
         return bidding_factor
 
@@ -145,10 +160,10 @@ class Auctioneer:
     def get_alphas(self, seller, item):
         alphas = []
         for buyer in range(self.n_buyers):
-            if self.bidding_factor_strategy[buyer] == 1:
-                second_dimension = item
-            else:
+            if self.bidding_factor_strategy[buyer] == 0:
                 second_dimension = seller
+            else:
+                second_dimension = item
 
             alphas.append(self.bidding_factor[buyer][second_dimension])
         return alphas
@@ -180,21 +195,37 @@ class Auctioneer:
         str_0_table.field_names = ["Alphas"] + ["S" + str(seller) for seller in range(self.k_sellers)]
         str_1_table = PrettyTable()
         str_1_table.field_names = ["Alphas"] + ["Type " + str(item_type) for item_type in self.m_item_types]
+        str_2_table = PrettyTable()
+        str_2_table.field_names = ["Alphas"] + ["Type " + str(item_type) for item_type in self.m_item_types]
+
         str_0 = False
         str_1 = False
+        str_2 = False
+
         for strategy in self.bidding_factor_strategy:
-            if strategy == 1:
-                str_1_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
-                str_1 = True
-            else:
+
+            if strategy == 0:
+
                 str_0_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
                 str_0 = True
+
+            elif strategy == 1:
+
+                str_1_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
+                str_1 = True
+
+            elif strategy == 2:
+
+                str_2_table.add_row(["B" + str(buyer)] + ['%.2f' % elem for elem in self.bidding_factor[buyer]])
+                str_2 = True
 
             buyer += 1
         if str_0:
             print(str_0_table)
         if str_1:
             print(str_1_table)
+        if str_2:
+            print(str_2_table)
 
     def print_factors(self, extra_debug=False):
         if not self.debug and not extra_debug:
@@ -218,19 +249,44 @@ class Auctioneer:
         print("------------------------------------------------------")
 
     def update_alphas(self, winner, seller, item):
+
         new_alphas = []
         for buyer in range(self.n_buyers):
-            if self.bidding_factor_strategy[buyer] == 1:
-                second_dimension = item
-            else:
+            if self.bidding_factor_strategy[buyer] == 0:
+
                 second_dimension = seller
 
-            if buyer == winner:
-                self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
-            else:
-                self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
+                if buyer == winner:
+                    self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+                else:
+                    self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
 
-            new_alphas.append(self.bidding_factor[buyer][second_dimension])
+                new_alphas.append(self.bidding_factor[buyer][second_dimension])
+
+            elif self.bidding_factor_strategy[buyer] == 1:
+
+                second_dimension = item
+
+                if buyer == winner:
+                    self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+                else:
+                    self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
+
+                new_alphas.append(self.bidding_factor[buyer][second_dimension])
+
+            elif self.bidding_factor_strategy[buyer] == 2:
+
+                second_dimension = item
+
+                # if buyer == winner:
+
+                # Do not update
+
+                if buyer != winner and self.bidding_factor[buyer][second_dimension] < 2:
+                    self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
+                elif buyer != winner and self.bidding_factor[buyer][second_dimension] > 2:
+                    self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
+                new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
         return new_alphas
 
@@ -342,7 +398,7 @@ if __name__ == '__main__':
                             M_types=2,
                             K_sellers=2,
                             N_buyers=3,
-                            R_rounds=30,
+                            R_rounds=10,
                             level_comm_flag=False,
                             debug=True)
     auctioneer.start_auction()
