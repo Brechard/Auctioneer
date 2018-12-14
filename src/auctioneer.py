@@ -84,7 +84,8 @@ class Auctioneer:
         Bidding factor strategies:
             0 - Depends only on the seller using proposed one by assignment
             1 - Depends only on the kind of item using proposed one by assignment
-            2 - Depends on the kind of item, but has a max value to avoid price explosion
+            2 - Depends on the kind of item, but has a max value to avoid price explosion.
+                If alpha bigger
         :return: bidding factor
         """
         bidding_factor = []
@@ -146,6 +147,9 @@ class Auctioneer:
                 continue
 
             valid_bids.append(bid)
+
+        if len(valid_bids) == 0:
+            valid_bids.append(bids[0])
 
         valid_bids = sorted(valid_bids, reverse=True)
 
