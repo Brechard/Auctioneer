@@ -79,11 +79,17 @@ class Auctioneer:
                 or not self.buyers_already_won[buyer_id]:
             # If the buyer flag is not ON it means the buyer hasn't win an auction in this round yet
             return bid
+
         auction, seller = self.get_auction_with_winner(buyer_id, auction_round)
         previous_profit, market_price = auction.winner_profit, auction.market_price
         penalty = self.calculate_fee(market_price - previous_profit)
 
-        return max(bid, starting_price + previous_profit + penalty)
+        # return max(bid, starting_price + previous_profit + penalty)
+        if max(bid, starting_price + previous_profit + penalty) == bid:
+            return bid
+
+        else:
+            return 0
 
     def calculate_bidding_factor(self):
         """
@@ -365,10 +371,19 @@ class Auctioneer:
                 for buyer in range(self.n_buyers):
                     if self.buyers_already_won[buyer] and not self.level_commitment_activated:
                         continue
+
+                    # auction, seller = self.get_auction_with_winner(buyer, auction_round)
+                    # previous_profit, market_price = auction.winner_profit, auction.market_price
+                    # penalty = self.calculate_fee(market_price - previous_profit)
+
                     n_buyer_auction += 1
                     bid = self.calculate_bid(buyer, item, seller, starting_price, auction_round)
                     buyers_bid[buyer] = bid
                     total_bid += bid
+                    # if self.buyers_already_won[buyer] and self.level_commitment_activated:
+                    #
+                    # buyers_bid[buyer] = bid
+                    # total_bid += bid
 
                 market_price = total_bid / n_buyer_auction
                 winner, price_to_pay = self.choose_winner(buyers_bid, market_price)
@@ -381,9 +396,9 @@ class Auctioneer:
                                                      auction_round=auction_round,
                                                      item_kind=item)
 
-                if self.level_commitment_activated and self.buyers_already_won[winner]:
+                # if self.level_commitment_activated and self.buyers_already_won[winner]:
                     # The buyer already won an auction in this round so he has to choose which one to return
-                    self.choose_item_to_keep(auction, market_price, price_to_pay, winner, seller, auction_round)
+                    # self.choose_item_to_keep(auction, market_price, price_to_pay, winner, seller, auction_round)
 
                 self.market_price[auction_round, seller] = market_price
                 new_alphas = self.update_alphas(winner, seller, item, buyers_bid)
@@ -450,7 +465,7 @@ if __name__ == '__main__':
                             K_sellers=3,
                             N_buyers=buyers,
                             R_rounds=200,
-                            level_comm_flag=False,
+                            level_comm_flag=True,
                             debug=False)
     auctioneer.start_auction()
     auctioneer.plot_statistics()
