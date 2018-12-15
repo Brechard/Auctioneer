@@ -293,7 +293,7 @@ def check_bias_v2(times=1000, buyers=10):
     plt.hist(first_bidding_factor)
     plt.xlabel("Alpha")
     plt.ylabel("Times won")
-    plt.title("Alphas used by the users that won the simulation")
+    plt.title("Initial alphas used by the users that won the simulation")
     plt.show()
 
     print("After", times, "simulations, the initial winner is the final winner", starting_winner_is_final_winner,

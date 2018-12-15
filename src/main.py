@@ -61,13 +61,19 @@ if level_commitment_activated:
 else:
     penalty_factor = 0
 
+alpha = 0
+while alpha != 1 and alpha != 2:
+    alpha = request_integer_input("Bidding factor depends on the sellers (1) or types of items (2): ")
+
 # Execute with parameters
 auctioneer = Auctioneer(penalty_factor=penalty_factor,
                         bidding_factor_strategy=[strategy for n in range(number_of_buyers)],
+                        use_seller=(alpha == 1),
                         M_types=number_of_product_types,
                         K_sellers=number_of_sellers,
                         N_buyers=number_of_buyers,
                         R_rounds=number_of_rounds,
-                        level_comm_flag=level_commitment_activated)
+                        level_comm_flag=level_commitment_activated,
+                        debug=True)
 auctioneer.start_auction()
 auctioneer.plot_statistics()

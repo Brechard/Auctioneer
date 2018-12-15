@@ -12,7 +12,7 @@ class Auctioneer:
     def __init__(self, penalty_factor=0.1, bidding_factor_strategy=[], use_seller=True, starting_prices=[], M_types=3,
                  K_sellers=4, N_buyers=10, R_rounds=3, level_comm_flag=False, debug=True, universal_maximum_price=100):
         """
-        :param penalty_factor: Multiplier for fee calculation
+        :param penalty_factor: Multiplier for fee calculationz
         :param bidding_factor_strategy: Array with the bidding factor strategy of each buyer
         :param use_seller: Flag to use seller or item as second dimension for alpha
         :param starting_prices: Debug purposes, starting prices can be forced this way.
@@ -50,7 +50,7 @@ class Auctioneer:
         if use_seller:
             self.second_dimension = self.k_sellers
         else:
-            self.second_dimension = self.m_item_types
+            self.second_dimension = M_types
 
         self.bidding_factor_strategy = bidding_factor_strategy
         self.bidding_factor = self.calculate_bidding_factor()
@@ -77,7 +77,7 @@ class Auctioneer:
 
         if self.second_dimension == self.k_sellers:
             second_dimension = seller_id
-        elif self.second_dimension == self.m_item_types:
+        elif self.second_dimension == len(self.m_item_types):
             second_dimension = item_type
 
         bid = self.bidding_factor[buyer_id][second_dimension] * starting_price
@@ -178,7 +178,7 @@ class Auctioneer:
 
         if self.second_dimension == self.k_sellers:
             second_dimension = seller
-        elif self.second_dimension == self.m_item_types:
+        elif self.second_dimension == len(self.m_item_types):
             second_dimension = item
 
         alphas = []
@@ -214,7 +214,7 @@ class Auctioneer:
 
         if self.second_dimension == self.k_sellers:
             alphas_table.field_names = ["S-0"] + ["S" + str(seller) for seller in range(self.k_sellers)]
-        elif self.second_dimension == self.m_item_types:
+        elif self.second_dimension == len(self.m_item_types):
             alphas_table.field_names = ["S-1"] + ["Type " + str(item_type) for item_type in self.m_item_types]
 
         for strategy in self.bidding_factor_strategy:
@@ -249,7 +249,7 @@ class Auctioneer:
 
         if self.second_dimension == self.k_sellers:
             second_dimension = seller
-        elif self.second_dimension == self.m_item_types:
+        elif self.second_dimension == len(self.m_item_types):
             second_dimension = item
 
         new_alphas = []
@@ -448,17 +448,18 @@ class Auctioneer:
 
 
 if __name__ == '__main__':
-    buyers = 5
-    strategy = [2 for n in range(buyers)]
+    buyers = 10
+    strategy = [3 for n in range(buyers)]
     # strategy[0] = 4
     auctioneer = Auctioneer(0.1,
                             bidding_factor_strategy=strategy,
-                            M_types=1,
-                            K_sellers=1,
+                            M_types=3,
+                            K_sellers=4,
                             N_buyers=buyers,
-                            R_rounds=200,
+                            R_rounds=100,
                             level_comm_flag=False,
-                            debug=False)
+                            use_seller=False,
+                            debug=True)
     auctioneer.start_auction()
     auctioneer.plot_statistics()
     print("\nBidding factors when the simulation is finished")
