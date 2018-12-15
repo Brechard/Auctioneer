@@ -56,10 +56,47 @@ def effect_inc_decr_bid_factors(strategy=2):
     plt.show()
 
 
+"""
+Experiment 2
+Motivation
+We dont know if the prices will still be stable if we change the ceiling for the strategy
+Setting up
+We change the ceiling for N buyers and K sellers and see how the average price differs in the last round
+Result
+To be discussed
+"""
+
+
+def check_price_stability_varying_ceiling():
+    iterations = 500
+
+    ceilings = [top for top in np.arange(1.5, 5, 0.1)]
+    # avg_market_prices = []
+    # diff_marketprice_start_prices = []
+    mrkt_price_starting_price_ratio = []
+
+    for iter in range(len(ceilings)):
+        auctioneer = Auctioneer(K_sellers=1, N_buyers=10, R_rounds=100, debug=False)
+        auctioneer.ceiling = ceilings[iter]
+
+        auctioneer.start_auction()
+
+        # avg_market_prices.append(np.mean(auctioneer.market_price))
+        # diff_marketprice_start_prices.append(calculate_avg_difference(auctioneer.starting_prices, auctioneer.market_price))
+        mrkt_price_starting_price_ratio.append(
+            auctioneer.market_price[auctioneer.r_rounds - 1] / auctioneer.starting_prices[auctioneer.k_sellers - 1])
+
+    # plt.plot(ceilings, diff_marketprice_start_prices)
+    plt.plot(ceilings, mrkt_price_starting_price_ratio)
+    plt.xlabel("Ceiling")
+    plt.ylabel("Ratio between market price and starting price of last round")
+    plt.show()
+
+
 def check_bias(times=1000):
     max_profit = np.zeros(n_buyers)
     for n in range(times):
-        auctioneer = create_auctioneer(2)
+        auctioneer = Auctioneer(bidding_factor_strategy=2, R_rounds=100, )
         auctioneer.bidding_factor = []
         for buyer in range(n_buyers):
             bid_fact = np.random.uniform(1, 1.001, 3)
@@ -282,4 +319,7 @@ def calculate_best_alpha(auctioneer):
 # check_bias()
 # effect_inc_decr_bid_factors(2)
 # buyers_effect(2, False)
-check_bias_v2(10000)
+check_bias_v2(1000)
+# effect_inc_decr_bid_factors()
+
+# check_price_stability_varying_ceiling()
