@@ -56,7 +56,7 @@ class Auctioneer:
         self.bidding_factor = self.calculate_bidding_factor()
 
         self.increase_bidding_factor = np.random.uniform(1, 1.5, size=self.n_buyers)
-        self.decrease_bidding_factor = np.random.uniform(1/1.5, 1, size=self.n_buyers)
+        self.decrease_bidding_factor = np.random.uniform(0.3, 0.8, size=self.n_buyers)
 
         # Ceiling threshold for strategy 2
         self.ceiling = 2
