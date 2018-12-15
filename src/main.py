@@ -37,8 +37,7 @@ def request_boolean_input(string):
         else:
             x = input(string)
 
-    if x == 'y': return True
-    if x == 'n': return False
+    return x == 'y'
 
 
 # Request input from user
@@ -64,6 +63,7 @@ else:
 alpha = 0
 while alpha != 1 and alpha != 2:
     alpha = request_integer_input("Bidding factor depends on the sellers (1) or types of items (2): ")
+debug = request_boolean_input("Print the debug information on every round? (y/n): ")
 
 # Execute with parameters
 auctioneer = Auctioneer(penalty_factor=penalty_factor,
@@ -74,6 +74,7 @@ auctioneer = Auctioneer(penalty_factor=penalty_factor,
                         N_buyers=number_of_buyers,
                         R_rounds=number_of_rounds,
                         level_comm_flag=level_commitment_activated,
-                        debug=True)
+                        debug=debug)
+
 auctioneer.start_auction()
 auctioneer.plot_statistics()
