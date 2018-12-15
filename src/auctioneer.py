@@ -332,15 +332,15 @@ class Auctioneer:
 
                 new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
-            # If the bidding factor is less than 1, replace it with 1
-            if self.bidding_factor[buyer][second_dimension] < 1:
-                self.bidding_factor[buyer][second_dimension] = 1
-
             # Strategy 4 - Fully random each time
             # to see if previous alpha update was helpful or not
             elif self.bidding_factor_strategy[buyer] == 4:
                 self.bidding_factor[buyer][second_dimension] = np.random.uniform(1, 2)
             new_alphas.append(self.bidding_factor[buyer][second_dimension])
+
+            # If the bidding factor is less than 1, replace it with 1
+            if self.bidding_factor[buyer][second_dimension] < 1:
+                self.bidding_factor[buyer][second_dimension] = self.increase_bidding_factor[buyer]
 
         return new_alphas
 
