@@ -76,7 +76,8 @@ def check_price_stability_varying_ceiling():
     mrkt_price_starting_price_ratio = []
 
     for iter in range(len(ceilings)):
-        auctioneer = Auctioneer(K_sellers=1, N_buyers=10, R_rounds=100, debug=False)
+        auctioneer = Auctioneer(K_sellers=3, N_buyers=10, R_rounds=100, debug=False,
+                                bidding_factor_strategy=[3 for x in range(10)])
         auctioneer.ceiling = ceilings[iter]
 
         auctioneer.start_auction()
@@ -84,12 +85,15 @@ def check_price_stability_varying_ceiling():
         # avg_market_prices.append(np.mean(auctioneer.market_price))
         # diff_marketprice_start_prices.append(calculate_avg_difference(auctioneer.starting_prices, auctioneer.market_price))
         mrkt_price_starting_price_ratio.append(
-            auctioneer.market_price[auctioneer.r_rounds - 1] / auctioneer.starting_prices[auctioneer.k_sellers - 1])
+            np.mean(auctioneer.market_price[auctioneer.r_rounds - 1]) /
+            np.mean(auctioneer.starting_prices))
 
     # plt.plot(ceilings, diff_marketprice_start_prices)
     plt.plot(ceilings, mrkt_price_starting_price_ratio)
     plt.xlabel("Ceiling")
     plt.ylabel("Ratio between market price and starting price of last round")
+    plt.legend()
+
     plt.show()
 
 
@@ -319,7 +323,7 @@ def calculate_best_alpha(auctioneer):
 # check_bias()
 # effect_inc_decr_bid_factors(2)
 # buyers_effect(2, False)
-check_bias_v2(1000)
+# check_bias_v2(1000)
 # effect_inc_decr_bid_factors()
 
-# check_price_stability_varying_ceiling()
+check_price_stability_varying_ceiling()

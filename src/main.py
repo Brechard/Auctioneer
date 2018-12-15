@@ -47,8 +47,8 @@ number_of_buyers = request_integer_input("Number of buyers: ")
 number_of_rounds = request_integer_input("Number of auction rounds: ")
 universal_maximum_price = request_integer_input("Universal maximum price: ")
 strat = "Bidding factor strategies: " \
-        "\n\t0 - Depends only on the seller using proposed one by assignment" \
-        "\n\t1 - Depends only on the kind of item using proposed one by assignment" \
+        "\n\t1 - When an auction is won, the bidding factor is multiplied by the increasing factor and when lost by " \
+        "the decreasing factor" \
         "\n\t2 - Depends on the kind of item, but has a max value to avoid price explosion." \
         "If alpha bigger than 2, decrease it using decrease factor." \
         "\n\t3 - Depends on the kind of item, if the bid is higher than market price, bidding factor is multiplied by " \
