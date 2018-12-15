@@ -55,8 +55,8 @@ class Auctioneer:
         self.bidding_factor_strategy = bidding_factor_strategy
         self.bidding_factor = self.calculate_bidding_factor()
 
-        self.increase_bidding_factor = np.random.uniform(1, 1.2, size=self.n_buyers)
-        self.decrease_bidding_factor = np.random.uniform(0.8, 1, size=self.n_buyers)
+        self.increase_bidding_factor = np.random.uniform(1, 1.5, size=self.n_buyers)
+        self.decrease_bidding_factor = np.random.uniform(1/1.5, 1, size=self.n_buyers)
 
         # Ceiling threshold for strategy 2
         self.ceiling = 2
@@ -338,7 +338,7 @@ class Auctioneer:
                 self.bidding_factor[buyer][second_dimension] = np.random.uniform(1, 2)
             new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
-            # If the bidding factor is less than 1, replace it with 1
+            # If the bidding factor is less than 1, replace it with the increasing factor
             if self.bidding_factor[buyer][second_dimension] < 1:
                 self.bidding_factor[buyer][second_dimension] = self.increase_bidding_factor[buyer]
 
