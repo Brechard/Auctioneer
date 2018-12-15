@@ -99,7 +99,7 @@ class Auctioneer:
         bidding_factor = []
         for buyer in range(self.n_buyers):
             bidding_factor.append(
-                np.random.uniform(1, 1.2, self.second_dimension)
+                np.random.uniform(1, 2, self.second_dimension)
             )
 
         return bidding_factor
@@ -332,7 +332,7 @@ class Auctioneer:
             # Strategy 4 - Fully random each time
             # to see if previous alpha update was helpful or not
             elif self.bidding_factor_strategy[buyer] == 4:
-                self.bidding_factor[buyer][second_dimension] = np.random.uniform(1, 1.2)
+                self.bidding_factor[buyer][second_dimension] = np.random.uniform(1, 2)
             new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
         return new_alphas
@@ -443,11 +443,11 @@ class Auctioneer:
 if __name__ == '__main__':
     buyers = 5
     strategy = [2 for n in range(buyers)]
-    strategy[0] = 4
+    # strategy[0] = 4
     auctioneer = Auctioneer(0.1,
                             bidding_factor_strategy=strategy,
-                            M_types=2,
-                            K_sellers=3,
+                            M_types=1,
+                            K_sellers=1,
                             N_buyers=buyers,
                             R_rounds=200,
                             level_comm_flag=False,
