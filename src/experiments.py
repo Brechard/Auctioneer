@@ -22,6 +22,14 @@ def create_auctioneer(strategy=0, penalty_factor=0.1, level_flag=True, types=3, 
 
 
 def calculate_avg_difference(initial_price, market_price):
+    """
+    Calculate the average difference between two list of values, used mainly for the difference between initial and
+    market prices of the items.
+    :param initial_price: array 1
+    :param market_price: array 2
+    :return: average difference between the values of both arrays
+    """
+    assert len(initial_price) == len(market_price)
     total_difference = 0
     for item in range(len(initial_price)):
         total_difference += market_price[item] - initial_price[item]
@@ -30,6 +38,12 @@ def calculate_avg_difference(initial_price, market_price):
 
 
 def effect_inc_decr_bid_factors(strategy=2):
+    """
+    Experiment that check the effect of having all the possible values for increasing and decreasing bidding factor.
+    Plots a hit map with the average of difference between the starting prices and the market price in the last round.
+    This average difference is limited to 300.
+    :param strategy: Strategy to use
+    """
     i_range = 100
     d_range = 100
     differences = np.zeros((i_range, d_range))
@@ -56,18 +70,13 @@ def effect_inc_decr_bid_factors(strategy=2):
     plt.show()
 
 
-"""
-Experiment 2
-Motivation
-We dont know if the prices will still be stable if we change the ceiling for the strategy
-Setting up
-We change the ceiling for N buyers and K sellers and see how the average price differs in the last round
-Result
-To be discussed
-"""
-
-
 def check_price_stability_varying_ceiling():
+    """
+    Check the effect of modifying the ceiling for the strategy 2.
+    The effect is presented with a plot where the x axis is the value of the ciling and the y axis the average
+    difference between the initial prices and the market price of the last round.
+    """
+
     iterations = 500
 
     ceilings = [top for top in np.arange(1.5, 5, 0.1)]
@@ -82,8 +91,6 @@ def check_price_stability_varying_ceiling():
 
         auctioneer.start_auction()
 
-        # avg_market_prices.append(np.mean(auctioneer.market_price))
-        # diff_marketprice_start_prices.append(calculate_avg_difference(auctioneer.starting_prices, auctioneer.market_price))
         mrkt_price_starting_price_ratio.append(
             np.mean(auctioneer.market_price[auctioneer.r_rounds - 1]) /
             np.mean(auctioneer.starting_prices))
@@ -98,6 +105,12 @@ def check_price_stability_varying_ceiling():
 
 
 def check_bias(times=1000):
+    """
+    Experiment to check if there is a bias in the setting. All buyers have an initial bidding factor random
+    between 1 and 1.001 and the same increasing and decreasing factor.
+    The result is presented as the number of times that each buyer wins the simulation.
+    :param times: Number of times to execute the test
+    """
     max_profit = np.zeros(n_buyers)
     for n in range(times):
         auctioneer = Auctioneer(bidding_factor_strategy=2, R_rounds=100, )
@@ -119,6 +132,11 @@ def check_bias(times=1000):
 
 
 def check_penalty_factor_effect(strategy=2):
+    """
+    Experiment to check the effect of increasing the value of the penalty factor. Range from 0 to 0.5 with 200 steps of
+    0.0025 each.
+    :param strategy: strategy to follow in the experiment
+    """
     differences = []
     times_items_returned = []
     buyers_profits = []
@@ -168,6 +186,8 @@ def print_graphs(x_values, x_title, level_commitment, bad_trades=[], buyers_prof
                  sellers_profits=[],
                  times_items_returned=[],
                  distances=False):
+    # Method to print the graphs with the information from the experiments
+
     if len(differences) > 0:
         plt.plot(x_values, differences)
         plt.xlabel(x_title)
@@ -203,14 +223,13 @@ def print_graphs(x_values, x_title, level_commitment, bad_trades=[], buyers_prof
     plt.show()
 
 
-def get_distances_from_mean(array, distance):
-    if distance:
-        return [n / np.mean(array) for n in array]
-    else:
-        return [n - np.mean(array) for n in array]
-
-
 def buyers_effect(strategy, level_flag):
+    """
+    Experiment to check the effect of changing the number of buyers in a specific strategy.
+    Effect is shown with multiple graphs
+    :param strategy: strategy to check
+    :param level_flag: level commitment is activated or not
+    """
     k_sellers = 2
     differences = []
     times_items_returned = []
@@ -266,6 +285,14 @@ def buyers_effect(strategy, level_flag):
 
 
 def check_bias_v2(times=1000, buyers=10):
+    """
+    Second experiment to check if there is bias. The approach of this experiment is checking if the buyer that wins
+    the first round of the simulation is also the winner of the simulation.
+    The result of the experiment is shown with a printing. As extra information, an histogram with the starting bidding
+    factor of every simulation winner rounded to two decimal is presented.
+    :param times: Number of times to run simulation
+    :param buyers: number of buyers
+    """
     starting_winner_is_final_winner = 0
     winners = []
     first_bidding_factor = []
@@ -306,6 +333,11 @@ def check_bias_v2(times=1000, buyers=10):
 
 
 def calculate_best_alpha(auctioneer):
+    """
+    Used to calculate the winner of the first round, that is the buyer with the higher bidding factor below the mean.
+    :param auctioneer: object that contains the simulation
+    :return: id of the buyer, value bidding factor
+    """
     best_below_avg = 0
     best_below_avg_pos = 0
     avg = np.mean(auctioneer.bidding_factor)
@@ -318,12 +350,9 @@ def calculate_best_alpha(auctioneer):
 
 
 # check_penalty_factor_effect(2)
-# check_penalty_factor_effect(3)
-
 # check_bias()
 # effect_inc_decr_bid_factors(2)
 # buyers_effect(2, False)
 # check_bias_v2(1000)
 # effect_inc_decr_bid_factors()
-
-check_price_stability_varying_ceiling()
+# check_price_stability_varying_ceiling()
