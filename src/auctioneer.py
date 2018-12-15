@@ -9,16 +9,20 @@ from auction import Auction
 
 class Auctioneer:
 
-    def __init__(self, penalty_factor, bidding_factor_strategy=[], use_seller=True, starting_prices=[], M_types=3,
+    def __init__(self, penalty_factor=0.1, bidding_factor_strategy=[], use_seller=True, starting_prices=[], M_types=3,
                  K_sellers=4, N_buyers=10, R_rounds=3, level_comm_flag=False, debug=True, universal_maximum_price=100):
         """
-        :param bidding_factor_strategy: array with the bidding factor strategy of each buyer
+        :param penalty_factor: Multiplier for fee calculation
+        :param bidding_factor_strategy: Array with the bidding factor strategy of each buyer
+        :param use_seller: Flag to use seller or item as second dimension for alpha
         :param starting_prices: Debug purposes, starting prices can be forced this way.
         :param M_types: Number of types of items
         :param K_sellers: Number of sellers
         :param N_buyers: Number of buyers
         :param R_rounds: Number of rounds
         :param level_comm_flag: Flag to say if level commitment is allowed or not
+        :param debug: Flag for debug prints
+        :param universal_maximum_price: Max initial starting price
         """
         self.debug = debug
         if len(bidding_factor_strategy) == 0:
@@ -53,6 +57,9 @@ class Auctioneer:
 
         self.increase_bidding_factor = np.random.uniform(1, 1.2, size=self.n_buyers)
         self.decrease_bidding_factor = np.random.uniform(0.8, 1, size=self.n_buyers)
+
+        # Ceiling threshold for strategy 2
+        self.ceiling = 2
 
         self.market_price = np.zeros((self.r_rounds, self.k_sellers))
         self.buyers_profits = np.zeros((self.r_rounds, self.n_buyers))
@@ -91,7 +98,7 @@ class Auctioneer:
             0 - Depends only on the seller using proposed one by assignment
             1 - Depends only on the kind of item using proposed one by assignment
             2 - Depends on the kind of item, but has a max value to avoid price explosion.
-                If alpha bigger than 2, decrease it using decrease factor.
+                If alpha bigger than a ceiling threshold, decrease it using decrease factor.
             3 - Depends on the kind of item, if the bid is higher than market price, bidding factor is multiplied by
                 the decreasing factor while if it is lower multiply by the increasing factor.
         :return: bidding factor
@@ -145,7 +152,7 @@ class Auctioneer:
                 self.times_bad_trade += 1
 
     def choose_winner(self, bids, market_price):
-        # TODO dealing with two people with the same bid as winning bid
+
         valid_bids = []
         for bid in bids.values():
 
@@ -283,22 +290,22 @@ class Auctioneer:
                 new_alphas.append(self.bidding_factor[buyer][second_dimension])
 
             # Strategy 2 - Depends on the kind of item, but has a max value to avoid price explosion.
-            # If alpha bigger than 2, decrease it using decrease factor.
+            # If alpha bigger than ceiling, decrease it using decrease factor.
             elif self.bidding_factor_strategy[buyer] == 2:
 
                 # if buyer == winner:
 
                 # Do not update
 
-                if buyer != winner and self.bidding_factor[buyer][second_dimension] < 2:
+                if buyer != winner and self.bidding_factor[buyer][second_dimension] < self.ceiling:
 
                     self.bidding_factor[buyer][second_dimension] *= self.increase_bidding_factor[buyer]
 
                 elif self.buyers_already_won[buyer] and not self.level_commitment_activated:
 
-                    self.bidding_factor[buyer][second_dimension] = self.bidding_factor[buyer][second_dimension]
+                    continue
 
-                elif buyer != winner and self.bidding_factor[buyer][second_dimension] > 2:
+                elif buyer != winner and self.bidding_factor[buyer][second_dimension] > self.ceiling:
 
                     self.bidding_factor[buyer][second_dimension] *= self.decrease_bidding_factor[buyer]
 
